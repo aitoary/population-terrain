@@ -1,0 +1,637 @@
+{
+  "checkedAt": "2026-09-05T07:35:08.760913+00:00",
+  "status": "passed",
+  "sourceCount": 16684,
+  "sourceUniqueIds": 16684,
+  "nullValues": [],
+  "suppressionInspection": {
+    "2025": {
+      "HITOKU": {
+        "None": 522,
+        "*": 91,
+        "@": 79
+      },
+      "GASSANNonNull": 91
+    },
+    "2030": {
+      "HITOKU": {
+        "*": 92,
+        "@": 79,
+        "None": 521
+      },
+      "GASSANNonNull": 92
+    },
+    "2035": {
+      "HITOKU": {
+        "None": 497,
+        "*": 104,
+        "@": 91
+      },
+      "GASSANNonNull": 104
+    },
+    "2040": {
+      "HITOKU": {
+        "None": 478,
+        "*": 115,
+        "@": 99
+      },
+      "GASSANNonNull": 115
+    },
+    "2045": {
+      "HITOKU": {
+        "None": 479,
+        "*": 116,
+        "@": 97
+      },
+      "GASSANNonNull": 116
+    },
+    "2050": {
+      "HITOKU": {
+        "None": 487,
+        "*": 111,
+        "@": 94
+      },
+      "GASSANNonNull": 111
+    },
+    "2055": {
+      "HITOKU": {
+        "None": 487,
+        "*": 115,
+        "@": 90
+      },
+      "GASSANNonNull": 115
+    },
+    "2060": {
+      "HITOKU": {
+        "None": 492,
+        "*": 111,
+        "@": 89
+      },
+      "GASSANNonNull": 111
+    },
+    "2065": {
+      "HITOKU": {
+        "None": 490,
+        "*": 112,
+        "@": 90
+      },
+      "GASSANNonNull": 112
+    },
+    "2070": {
+      "HITOKU": {
+        "None": 485,
+        "*": 115,
+        "@": 92
+      },
+      "GASSANNonNull": 115
+    }
+  },
+  "ptnVsPt00Example": {
+    "MESH_ID": "594115541",
+    "PTN_2030": 2.767,
+    "PT00_2030": 0.0,
+    "HITOKU2030": "*",
+    "GASSAN2030": "594115731"
+  },
+  "compoundCityCodesOutsideMiyako": [
+    {
+      "meshId": "584130482",
+      "sourceCityCode": "03402_03209"
+    },
+    {
+      "meshId": "584130494",
+      "sourceCityCode": "03209_03402"
+    },
+    {
+      "meshId": "584130672",
+      "sourceCityCode": "03209_03402"
+    },
+    {
+      "meshId": "584135864",
+      "sourceCityCode": "03210_03203"
+    },
+    {
+      "meshId": "584140074",
+      "sourceCityCode": "03402_03215"
+    },
+    {
+      "meshId": "584140083",
+      "sourceCityCode": "03402_03215"
+    },
+    {
+      "meshId": "584140184",
+      "sourceCityCode": "03215_03402"
+    },
+    {
+      "meshId": "584140282",
+      "sourceCityCode": "03215_03402"
+    },
+    {
+      "meshId": "584140291",
+      "sourceCityCode": "03402_03215"
+    },
+    {
+      "meshId": "584141212",
+      "sourceCityCode": "03402_03215"
+    },
+    {
+      "meshId": "584150622",
+      "sourceCityCode": "03215_03381"
+    },
+    {
+      "meshId": "584150842",
+      "sourceCityCode": "03215_03381"
+    },
+    {
+      "meshId": "584154264",
+      "sourceCityCode": "03210_03441"
+    },
+    {
+      "meshId": "584154271",
+      "sourceCityCode": "03210_03441"
+    },
+    {
+      "meshId": "584160764",
+      "sourceCityCode": "03381_03206"
+    },
+    {
+      "meshId": "584160773",
+      "sourceCityCode": "03381_03206"
+    },
+    {
+      "meshId": "584160862",
+      "sourceCityCode": "03206_03381"
+    },
+    {
+      "meshId": "584160963",
+      "sourceCityCode": "03381_03206"
+    },
+    {
+      "meshId": "584170022",
+      "sourceCityCode": "03381_03206"
+    },
+    {
+      "meshId": "584170031",
+      "sourceCityCode": "03206_03381"
+    },
+    {
+      "meshId": "584170942",
+      "sourceCityCode": "03206_03205"
+    },
+    {
+      "meshId": "584170943",
+      "sourceCityCode": "03206_03205"
+    },
+    {
+      "meshId": "584170944",
+      "sourceCityCode": "03205_03206"
+    },
+    {
+      "meshId": "584171033",
+      "sourceCityCode": "03206_03215"
+    },
+    {
+      "meshId": "584171291",
+      "sourceCityCode": "03215_03206"
+    },
+    {
+      "meshId": "594007282",
+      "sourceCityCode": "03206_03205"
+    },
+    {
+      "meshId": "594100023",
+      "sourceCityCode": "03206_03205"
+    },
+    {
+      "meshId": "594100032",
+      "sourceCityCode": "03206_03205"
+    },
+    {
+      "meshId": "594100042",
+      "sourceCityCode": "03205_03206"
+    },
+    {
+      "meshId": "594100142",
+      "sourceCityCode": "03206_03205"
+    },
+    {
+      "meshId": "594100252",
+      "sourceCityCode": "03206_03205"
+    },
+    {
+      "meshId": "594100284",
+      "sourceCityCode": "03206_03205"
+    },
+    {
+      "meshId": "594101212",
+      "sourceCityCode": "03206_03205"
+    },
+    {
+      "meshId": "594101332",
+      "sourceCityCode": "03206_03205"
+    },
+    {
+      "meshId": "594101341",
+      "sourceCityCode": "03206_03205"
+    },
+    {
+      "meshId": "594102254",
+      "sourceCityCode": "03208_03205"
+    },
+    {
+      "meshId": "594112062",
+      "sourceCityCode": "03208_03205"
+    },
+    {
+      "meshId": "594120974",
+      "sourceCityCode": "03321_03322"
+    },
+    {
+      "meshId": "594120993",
+      "sourceCityCode": "03321_03322"
+    },
+    {
+      "meshId": "594120994",
+      "sourceCityCode": "03321_03322"
+    },
+    {
+      "meshId": "594121102",
+      "sourceCityCode": "03205_03321"
+    },
+    {
+      "meshId": "594121804",
+      "sourceCityCode": "03321_03322"
+    },
+    {
+      "meshId": "594121813",
+      "sourceCityCode": "03321_03322"
+    },
+    {
+      "meshId": "594121902",
+      "sourceCityCode": "03321_03322"
+    },
+    {
+      "meshId": "594121911",
+      "sourceCityCode": "03321_03322"
+    },
+    {
+      "meshId": "594121914",
+      "sourceCityCode": "03321_03322"
+    },
+    {
+      "meshId": "594121924",
+      "sourceCityCode": "03321_03322"
+    },
+    {
+      "meshId": "594121933",
+      "sourceCityCode": "03322_03321"
+    },
+    {
+      "meshId": "594121934",
+      "sourceCityCode": "03321_03322"
+    },
+    {
+      "meshId": "594130091",
+      "sourceCityCode": "03322_03321"
+    },
+    {
+      "meshId": "594130671",
+      "sourceCityCode": "03322_03201"
+    },
+    {
+      "meshId": "594130672",
+      "sourceCityCode": "03322_03201"
+    },
+    {
+      "meshId": "594130681",
+      "sourceCityCode": "03201_03322"
+    },
+    {
+      "meshId": "594130684",
+      "sourceCityCode": "03322_03201"
+    },
+    {
+      "meshId": "594130791",
+      "sourceCityCode": "03201_03322"
+    },
+    {
+      "meshId": "594130794",
+      "sourceCityCode": "03322_03201"
+    },
+    {
+      "meshId": "594131021",
+      "sourceCityCode": "03321_03322"
+    },
+    {
+      "meshId": "594131031",
+      "sourceCityCode": "03321_03322"
+    },
+    {
+      "meshId": "594131042",
+      "sourceCityCode": "03321_03322"
+    },
+    {
+      "meshId": "594131053",
+      "sourceCityCode": "03321_03322"
+    },
+    {
+      "meshId": "594131154",
+      "sourceCityCode": "03321_03201"
+    },
+    {
+      "meshId": "594131261",
+      "sourceCityCode": "03321_03201"
+    },
+    {
+      "meshId": "594131344",
+      "sourceCityCode": "03322_03201"
+    },
+    {
+      "meshId": "594131534",
+      "sourceCityCode": "03322_03201"
+    },
+    {
+      "meshId": "594131702",
+      "sourceCityCode": "03322_03201"
+    },
+    {
+      "meshId": "594131704",
+      "sourceCityCode": "03322_03201"
+    },
+    {
+      "meshId": "594131711",
+      "sourceCityCode": "03322_03201"
+    },
+    {
+      "meshId": "594140311",
+      "sourceCityCode": "03301_03201"
+    },
+    {
+      "meshId": "594140314",
+      "sourceCityCode": "03301_03201"
+    },
+    {
+      "meshId": "594140414",
+      "sourceCityCode": "03301_03216"
+    },
+    {
+      "meshId": "594140421",
+      "sourceCityCode": "03301_03201"
+    },
+    {
+      "meshId": "594140422",
+      "sourceCityCode": "03216_03301"
+    },
+    {
+      "meshId": "594140423",
+      "sourceCityCode": "03216_03301"
+    },
+    {
+      "meshId": "594140431",
+      "sourceCityCode": "03216_03301"
+    },
+    {
+      "meshId": "594140463",
+      "sourceCityCode": "03216_03201"
+    },
+    {
+      "meshId": "594140512",
+      "sourceCityCode": "03301_03216"
+    },
+    {
+      "meshId": "594140514",
+      "sourceCityCode": "03301_03216"
+    },
+    {
+      "meshId": "594140561",
+      "sourceCityCode": "03216_03201"
+    },
+    {
+      "meshId": "594140563",
+      "sourceCityCode": "03216_03201"
+    },
+    {
+      "meshId": "594140661",
+      "sourceCityCode": "03216_03201"
+    },
+    {
+      "meshId": "594140674",
+      "sourceCityCode": "03201_03216"
+    },
+    {
+      "meshId": "594140752",
+      "sourceCityCode": "03216_03201"
+    },
+    {
+      "meshId": "594140761",
+      "sourceCityCode": "03201_03216"
+    },
+    {
+      "meshId": "594140772",
+      "sourceCityCode": "03216_03201"
+    },
+    {
+      "meshId": "594140783",
+      "sourceCityCode": "03201_03216"
+    },
+    {
+      "meshId": "594140982",
+      "sourceCityCode": "03216_03201"
+    },
+    {
+      "meshId": "594140993",
+      "sourceCityCode": "03216_03201"
+    },
+    {
+      "meshId": "594140994",
+      "sourceCityCode": "03216_03201"
+    },
+    {
+      "meshId": "594151201",
+      "sourceCityCode": "03201_03216"
+    },
+    {
+      "meshId": "594160282",
+      "sourceCityCode": "03216_03201"
+    },
+    {
+      "meshId": "594160284",
+      "sourceCityCode": "03216_03201"
+    },
+    {
+      "meshId": "594160483",
+      "sourceCityCode": "03216_03201"
+    },
+    {
+      "meshId": "594160571",
+      "sourceCityCode": "03216_03214"
+    },
+    {
+      "meshId": "594161712",
+      "sourceCityCode": "03214_03201"
+    },
+    {
+      "meshId": "594161822",
+      "sourceCityCode": "03201_03214"
+    },
+    {
+      "meshId": "594161854",
+      "sourceCityCode": "03201_03303"
+    },
+    {
+      "meshId": "594161882",
+      "sourceCityCode": "03201_03303"
+    },
+    {
+      "meshId": "594167432",
+      "sourceCityCode": "03483_03484"
+    },
+    {
+      "meshId": "594167444",
+      "sourceCityCode": "03483_03484"
+    },
+    {
+      "meshId": "594171142",
+      "sourceCityCode": "03201_03303"
+    },
+    {
+      "meshId": "594171212",
+      "sourceCityCode": "03214_03303"
+    },
+    {
+      "meshId": "594171311",
+      "sourceCityCode": "03214_03303"
+    },
+    {
+      "meshId": "594171511",
+      "sourceCityCode": "03214_03303"
+    },
+    {
+      "meshId": "594171514",
+      "sourceCityCode": "03214_03303"
+    },
+    {
+      "meshId": "594171804",
+      "sourceCityCode": "03214_03303"
+    },
+    {
+      "meshId": "594176663",
+      "sourceCityCode": "03484_03485"
+    },
+    {
+      "meshId": "604113254",
+      "sourceCityCode": "03302_03506"
+    },
+    {
+      "meshId": "604116451",
+      "sourceCityCode": "03207_03503"
+    },
+    {
+      "meshId": "604116453",
+      "sourceCityCode": "03503_03207"
+    },
+    {
+      "meshId": "604116573",
+      "sourceCityCode": "03503_03207"
+    },
+    {
+      "meshId": "604125843",
+      "sourceCityCode": "03207_03507"
+    },
+    {
+      "meshId": "604125981",
+      "sourceCityCode": "03207_03507"
+    },
+    {
+      "meshId": "604133062",
+      "sourceCityCode": "03506_03501"
+    },
+    {
+      "meshId": "604134282",
+      "sourceCityCode": "03501_03507"
+    },
+    {
+      "meshId": "604134852",
+      "sourceCityCode": "03501_03507"
+    }
+  ],
+  "specDifference": "The plan/page describe a single 5-digit SHICODE, but the hash-identical original contains compound codes outside Miyako. Components are validated; raw assignments are retained and not split. Only exact SHICODE 03202 is selected. No compound code includes Miyako.",
+  "meshCount": 692,
+  "uniqueIds": 692,
+  "totals": {
+    "2020": 50369.0,
+    "2025": 46112.9997,
+    "2030": 41867.0004,
+    "2035": 37745.9999,
+    "2040": 33804.9995,
+    "2045": 30106.9996,
+    "2050": 26633.0007,
+    "2055": 23473.0002,
+    "2060": 20574.9993,
+    "2065": 17931.0001,
+    "2070": 15526.9996
+  },
+  "nullCounts": {
+    "2020": 0,
+    "2025": 0,
+    "2030": 0,
+    "2035": 0,
+    "2040": 0,
+    "2045": 0,
+    "2050": 0,
+    "2055": 0,
+    "2060": 0,
+    "2065": 0,
+    "2070": 0
+  },
+  "zeroCounts": {
+    "2020": 0,
+    "2025": 7,
+    "2030": 26,
+    "2035": 46,
+    "2040": 66,
+    "2045": 90,
+    "2050": 123,
+    "2055": 148,
+    "2060": 181,
+    "2065": 208,
+    "2070": 225
+  },
+  "bbox": [
+    141.35,
+    39.458333333333336,
+    142.05,
+    39.825
+  ],
+  "crs": {
+    "source": "EPSG:6668",
+    "output": "EPSG:4326",
+    "alwaysXY": true,
+    "pyprojVersion": "3.7.2",
+    "projVersion": "9.5.1",
+    "networkEnabled": false,
+    "description": "axis order change (2D) + JGD2011 to WGS 84 (1) + axis order change (2D)",
+    "definition": "proj=noop ellps=GRS80",
+    "accuracyMeters": 1.0,
+    "note": "For 500m visualization, not survey-grade or tectonic displacement alignment. An identity transform is valid."
+  },
+  "borderCount": 1823,
+  "station": [
+    141.94674615,
+    39.640204425
+  ],
+  "outputs": {
+    "miyako-population.geojson": {
+      "bytes": 302351,
+      "sha256": "bebb135c5759db06fed6d5d8c758bca480729c9f3dc6db19edb6d28c0470278b"
+    },
+    "miyako-border.geojson": {
+      "bytes": 5259720,
+      "sha256": "07b6eced850d670aead850d46c0f015f04a67168be96b36d46007efba104d24a"
+    },
+    "data-meta.json": {
+      "bytes": 3687,
+      "sha256": "099d5a55d5035a4c3544d7bf8af30f6c53eae96662a914d68cd80b494a87e8ee"
+    }
+  }
+}
