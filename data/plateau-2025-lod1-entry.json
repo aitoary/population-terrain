@@ -1,0 +1,28 @@
+{
+  "retrievedAt": "2026-09-05T06:24:06.331331+00:00",
+  "catalogUrl": "https://api.plateauview.mlit.go.jp/datacatalog/plateau-datasets",
+  "catalogSha256": "f81de93adfb2c62bb04f1df36213a625a7055e68b2fc991a9fc2aedf39cb7ebc",
+  "entry": {
+    "id": "03202_bldg_lod1",
+    "name": "建築物モデル（宮古市）",
+    "pref": "岩手県",
+    "pref_code": "03",
+    "city": "宮古市",
+    "city_code": "03202",
+    "ward": null,
+    "ward_code": null,
+    "type": "建築物モデル",
+    "type_en": "bldg",
+    "url": "https://assets.cms.plateau.reearth.io/assets/2f/68cfb0-341f-4e67-a522-89d844f79a85/03202_miyako-shi_city_2025_citygml_1_op_bldg_3dtiles_lod1/tileset.json",
+    "file_size": 20696800,
+    "composite_url": "https://api.plateauview.mlit.go.jp/datacatalog/3dtiles/03202-bldg-lod1-texture-2025/tileset.json",
+    "layers": null,
+    "year": 2025,
+    "registration_year": 2025,
+    "spec": "5.0",
+    "format": "3D Tiles",
+    "format_version": "1.0",
+    "lod": "1",
+    "texture": true
+  }
+}

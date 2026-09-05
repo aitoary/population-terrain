@@ -1,0 +1,14 @@
+node_modules/
+dist/
+.vite/
+.venv/
+__pycache__/
+*.py[cod]
+.DS_Store
+.env
+.env.*
+!.env.example
+data/raw/
+artifacts/
+.playwright/
+.npm-cache/
