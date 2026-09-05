@@ -1,0 +1,40 @@
+:root { font-family: -apple-system, BlinkMacSystemFont, 'Noto Sans JP', sans-serif; color: #1c303b; background: #edf1f2; font-synthesis: none; }
+* { box-sizing: border-box; }
+body { margin: 0; }
+button, select, input { font: inherit; }
+button { cursor: pointer; }
+button:disabled { cursor: wait; }
+button:focus-visible, a:focus-visible { outline: 3px solid #c07720; outline-offset: 3px; }
+a { color: #125d70; text-underline-offset: 3px; }
+.app-shell { height: 100dvh; min-height: 680px; display: grid; grid-template-rows: auto minmax(0, 1fr) auto; }
+.app-header { padding: 16px 24px; display: flex; justify-content: space-between; align-items: center; background: #fff; border-bottom: 1px solid #ccd6da; }
+h1 { margin: 3px 0 0; font-size: 24px; font-weight: 650; letter-spacing: .04em; }
+.eyebrow { margin: 0; font-size: 10px; letter-spacing: .18em; color: #56717d; }
+.stage-label { background: #e6f0ed; color: #285e4f; border-radius: 4px; padding: 6px 10px; font-size: 12px; }
+.map-shell { min-height: 0; position: relative; }
+.map-viewport { position: absolute; inset: 0; background: #132a37; }
+.app-footer { padding: 10px 24px; font-size: 12px; line-height: 1.7; background: #fff; border-top: 1px solid #ccd6da; }
+.has-panel .map-viewport { right: 320px; }
+.inspection-panel { position: absolute; right: 0; top: 0; bottom: 0; width: 320px; overflow-y: auto; padding: 22px; background: #f8fafb; border-left: 1px solid #ccd6da; font-size: 13px; }
+h2 { font-size: 18px; margin: 0 0 8px; }
+.muted { color: #607580; font-size: 12px; }
+.load-states { padding: 0; margin: 20px 0; list-style: none; }
+.load-states li { display: grid; gap: 6px; padding: 12px 0; border-top: 1px solid #d9e1e4; }
+.load-states strong { font-size: 11px; letter-spacing: .06em; }
+.load-states [data-state='ready'] span { color: #26624d; }
+.load-states [data-state='error'], .error-message { color: #a82929; overflow-wrap: anywhere; }
+.inspection-panel button { border: 1px solid #acc2c9; border-radius: 4px; background: #fff; padding: 7px 10px; color: #1b5262; text-align: left; }
+.note { color: #526873; font-size: 12px; line-height: 1.8; }
+.map-loading { margin: 24px; }
+.formula { border-left: 3px solid #36766b; padding: 8px 10px; margin: 14px 0; background: #e9f1ee; font-size: 12px; line-height: 1.8; }
+.sample-cells { display: grid; gap: 12px; }
+.sample-cell { border: 1px solid #d4dfe3; border-radius: 5px; padding: 12px; background: #fff; }
+.sample-cell h3 { font-size: 13px; margin: 0 0 5px; }
+.sample-cell code { font-size: 11px; color: #5a6b73; }
+.sample-cell dl { margin: 10px 0; display: grid; gap: 6px; font-size: 11px; }
+.sample-cell dl div { display: flex; justify-content: space-between; gap: 8px; }
+.sample-cell dt { color: #596e79; }
+.sample-cell dd { margin: 0; font-variant-numeric: tabular-nums; }
+.sample-cell button { width: 100%; font-size: 12px; }
+.source-notes { margin: 16px 0; font-size: 12px; line-height: 1.8; }
+.source-notes summary { cursor: pointer; font-weight: 600; }
