@@ -1,0 +1,195 @@
+{
+  "schemaVersion": 1,
+  "task": "T06",
+  "status": "passed",
+  "verifiedOn": "2026-09-05",
+  "scope": "Local PC browser feasibility: real terrain, fixed 2025 LOD1 buildings, and three real 2050 population cells. Not the completed MVP.",
+  "environment": {
+    "os": "macOS 15.7.9",
+    "architecture": "x86_64",
+    "node": "22.22.1",
+    "npm": "11.16.0",
+    "python": "3.14.7",
+    "pyproj": "3.7.2",
+    "proj": "9.5.1",
+    "chrome": "152.0.7977.76",
+    "playwright": "1.63.0",
+    "cesium": "1.145.0",
+    "webgl": "WebGL 2.0 / ANGLE SwiftShader software rendering",
+    "viewport": { "width": 1440, "height": 1000 },
+    "hardwareGpuBenchmark": false
+  },
+  "sources": {
+    "manifest": "data/source-manifest.json",
+    "populationSourceSha256": "2ca30e11eaf5328098c93af59a11ec2f55e73a727c3359f297a4667c628c0d59",
+    "populationGeojson": "public/data/miyako-population.geojson",
+    "populationGeojsonSha256": "bebb135c5759db06fed6d5d8c758bca480729c9f3dc6db19edb6d28c0470278b",
+    "buildingTilesetSha256": "dc2b322e126757e1bae9d38061b0fbc6c016a786b48fa610f9e7441452a82a91",
+    "buildingDatasetYear": 2025,
+    "buildingLod": 1,
+    "populationSeries": "PTN",
+    "meshCount": 692,
+    "yearCount": 11,
+    "inspectionYear": 2050
+  },
+  "heightRule": {
+    "terrainLevel": 12,
+    "samplesPerCell": 9,
+    "maxConcurrentSamplingCalls": 2,
+    "baseHeight": "max(nine finite sampled ellipsoid heights) + 2 metres",
+    "length": "population * 0.5 metres/person",
+    "extrudedHeight": "baseHeight + length",
+    "missingHeightFallback": "none; keep numeric row, omit geometry",
+    "measurementCaveat": "Nine-point approximation, not the exact cell maximum or a survey-precision measurement."
+  },
+  "cellMeasurements": [
+    {
+      "meshId": "594137654",
+      "label": "宮古駅",
+      "population": 377.5496,
+      "baseHeight": 53.71269027909884,
+      "length": 188.7748,
+      "minHeight": 45.84112544527805,
+      "maxHeight": 51.71269027909884
+    },
+    {
+      "meshId": "594137753",
+      "label": "駅北西・斜面",
+      "population": 556.1786,
+      "baseHeight": 95.01123701444385,
+      "length": 278.0893,
+      "minHeight": 43.675251646489286,
+      "maxHeight": 93.01123701444385
+    },
+    {
+      "meshId": "594137563",
+      "label": "駅南東・低人口",
+      "population": 1.6294,
+      "baseHeight": 118.75404918673104,
+      "length": 0.8147,
+      "minHeight": 42.78949359394896,
+      "maxHeight": 116.75404918673104
+    }
+  ],
+  "devAndRecoveredPreviewMeasurementsIdentical": true,
+  "validation": {
+    "build": { "command": "npm run build", "status": "passed", "includesTypecheck": true, "cesiumStaticFilesCopied": 389 },
+    "vitest": { "command": "npm test", "status": "passed", "files": 6, "tests": 217 },
+    "python": { "command": "npm run test:python", "status": "passed", "tests": 13 },
+        "pythonCompile": { "command": ".venv/bin/python -m py_compile scripts/acquire_data.py scripts/prepare_population.py scripts/test_prepare_population.py", "status": "passed" },
+        "inMemoryReprocessing": {
+          "status": "passed",
+          "scope": "Re-run population and border preprocessing from the pinned real ZIPs after Python typing fixes.",
+          "meshCount": 692,
+          "populationAndBorderByteIdenticalToPublic": true,
+          "publishedFilesModified": false
+        },
+        "editorDiagnostics": {
+          "errors": 0,
+          "warnings": 1,
+          "remaining": "Ruff I001 import sorting/formatting in scripts/prepare_population.py"
+        },
+    "syntheticColumnTest": {
+      "scope": "unit tests only; no synthetic browser population",
+      "baseHeights": [-20, 0, 123.5, 2500],
+      "populations": [100, 50],
+      "polygonLengths": [50, 25],
+      "status": "passed"
+    },
+    "browserRuns": [
+      {
+        "command": "node scripts/browser_smoke.mjs dev --stage cells",
+        "status": "passed",
+        "startedAt": "2026-09-05T09:03:23.691Z",
+        "runDurationMs": 79371,
+        "cleanupDurationMs": 1819,
+        "requestCount": 843,
+        "expectedCancelledRequests": 3,
+        "unexpectedRequestFailures": 0,
+        "non200Count": 0,
+        "pageErrors": 0,
+        "ionRequests": 0,
+        "pendingRequestsAtObservationEnd": 0,
+        "staticAssetSamplesPassed": 4,
+        "canvasCount": 1,
+        "webglContextLost": false,
+        "ownedProcessesStopped": true,
+        "temporaryProfileRemoved": true,
+        "report": "artifacts/browser-cells-dev.json",
+        "screenshot": "artifacts/browser-cells-dev.png"
+      },
+      {
+        "command": "CHECK_TERRAIN_FAILURE=1 node scripts/browser_smoke.mjs preview --stage cells",
+        "status": "passed",
+        "startedAt": "2026-09-05T09:05:13.793Z",
+        "finishedAt": "2026-09-05T09:06:30.248Z",
+        "runDurationMs": 74829,
+        "cleanupDurationMs": 1626,
+        "requestCount": 859,
+        "expectedCancelledRequests": 1,
+        "unexpectedRequestFailures": 0,
+        "non200Count": 1,
+        "expectedInjected503Count": 1,
+        "pageErrors": 0,
+        "ionRequests": 0,
+        "pendingRequestsAtObservationEnd": 0,
+        "staticAssetSamplesPassed": 4,
+        "canvasCount": 1,
+        "webglContextLost": false,
+        "ownedProcessesStopped": true,
+        "temporaryProfileRemoved": true,
+        "report": "artifacts/browser-cells-preview.json",
+        "screenshot": "artifacts/browser-cells-preview.png",
+        "terrainFailure": {
+          "metadataUrl": "https://tile.plateauview.mlit.go.jp/terrain/layer.json",
+          "phase": "recovered",
+          "realPopulationAndLengthRowsRetained": 3,
+          "baseHeightAttributesAbsent": true,
+          "focusButtonsDisabledDuringFailure": true,
+          "faultStates": { "terrain": "error", "population": "error", "buildings": "ready" },
+          "retryObservedRealMetadata200": true,
+          "populationAndLengthUnchangedAfterRetry": true,
+          "faultVerifiedAtMs": 17510,
+          "retryAtMs": 17542,
+          "recoveredAtMs": 36505,
+          "screenshot": "artifacts/browser-cells-preview-terrain-failure.png"
+        }
+      }
+    ],
+    "rawDataPublication": {
+      "status": "passed",
+      "method": "Finite Vite createServer probe, closed in finally; request every manifest source via regular and /@fs/ paths, then inspect public and dist paths.",
+      "manifestOriginalFiles": 9,
+      "devRequests": 18,
+      "http403Responses": 18,
+      "originalsInPublic": 0,
+      "originalsInDist": 0
+    }
+  },
+  "visualInspection": {
+    "status": "passed",
+    "images": [
+      "artifacts/browser-cells-dev.png",
+      "artifacts/browser-cells-preview-cell-1.png",
+      "artifacts/browser-cells-preview-cell-2.png",
+      "artifacts/browser-cells-preview-cell-3.png",
+      "artifacts/browser-cells-preview-terrain-failure.png"
+    ],
+    "observations": [
+      "Station cell overlaps real LOD1 buildings and GSI imagery.",
+      "Hillside cell shows terrain relief and an extruded column.",
+      "Low-population cell remains a thin 0.8147-metre extrusion, not inflated to a minimum height.",
+      "During the injected failure, numeric population and L remain while B is explicitly unavailable."
+    ]
+  },
+  "artifactPolicy": "artifacts/ is gitignored and browser runs overwrite their own reports/screenshots; this JSON preserves the concise final evidence.",
+  "limitations": [
+    "Three cells and fixed 2050 inspection year only; T07 and later are not implemented.",
+    "Nine-point terrain maximum can leave floating bases or terrain/building intersections.",
+    "No all-410-building-tile reachability check, exact grounding validation, hardware GPU FPS, mobile, or long-running stability test.",
+    "Cesium lazy chunk is approximately 4.16 MB / 1.12 MB gzip; the build size warning remains.",
+    "Software WebGL screenshot ReadPixels performance warnings remain.",
+        "One editor Ruff I001 import-formatting warning remains in scripts/prepare_population.py; no editor type errors.",
+    "No public deployment, CityGML conversion, age groups, or other-city comparisons."
+  ]
+}
