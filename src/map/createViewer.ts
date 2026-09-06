@@ -17,6 +17,8 @@ export function describeError(error: unknown): string {
 
 export function createViewer(container: HTMLElement, onImageryError: (message: string) => void) {
   const viewer = new Viewer(container, {
+    // Cesium's default error panel uses innerHTML; MapViewport reports errors as React text.
+    showRenderLoopErrors: false,
     baseLayer: false,
     terrainProvider: new EllipsoidTerrainProvider(), // Bootstrap only, never used for population heights.
     baseLayerPicker: false,

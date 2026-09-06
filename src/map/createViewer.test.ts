@@ -134,12 +134,18 @@ afterEach(() => {
 });
 
 describe('createViewer', () => {
+  it('disables the library HTML error panel so React owns error notification', () => {
+    createScene(vi.fn());
+    expect(vi.mocked(Viewer).mock.calls[0]?.[1]?.showRenderLoopErrors).toBe(false);
+  });
+
   it('initializes explicit imagery and a bootstrap terrain without DOM or network access', () => {
     const { viewer: result, container } = createScene(vi.fn());
 
     expect(typeof document).toBe('undefined');
     expect(result).toBe(viewer);
     expect(Viewer).toHaveBeenCalledExactlyOnceWith(container, expect.objectContaining({
+      showRenderLoopErrors: false,
       baseLayer: false,
       terrainProvider: expect.any(EllipsoidTerrainProvider),
       baseLayerPicker: false,
