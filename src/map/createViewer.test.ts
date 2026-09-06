@@ -161,7 +161,7 @@ describe('createViewer', () => {
     expect(viewer.scene.globe.depthTestAgainstTerrain).toBe(true);
     expect(viewer.camera.lookAt).toHaveBeenCalledExactlyOnceWith(
       { longitude: MIYAKO_STATION.longitude, latitude: MIYAKO_STATION.latitude },
-      { heading: 10 * Math.PI / 180, pitch: -42 * Math.PI / 180, range: 4500 },
+      { heading: 10 * Math.PI / 180, pitch: -42 * Math.PI / 180, range: 2800 },
     );
     expect(viewer.camera.lookAtTransform).toHaveBeenCalledExactlyOnceWith('identity-transform');
     expect(viewer.scene.requestRender).toHaveBeenCalledOnce();

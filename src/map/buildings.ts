@@ -4,7 +4,8 @@ import { DATA_SOURCES } from '../config/dataSources';
 import { describeError } from './createViewer';
 import type { LayerControl, ReportState } from './createViewer';
 
-export function connectBuildings(viewer: Viewer, report: ReportState): LayerControl {
+export function connectBuildings(viewer: Viewer, report: ReportState): LayerControl & { setVisible: (visible: boolean) => void } {
+  let show = true;
   let disposed = false;
   let generation = 0;
   let current: Cesium3DTileset | undefined;
@@ -31,6 +32,7 @@ export function connectBuildings(viewer: Viewer, report: ReportState): LayerCont
         return;
       }
       current = tileset;
+            tileset.show = show;
       let visible = false;
       let failed = false;
       removeListeners = [
@@ -54,6 +56,7 @@ export function connectBuildings(viewer: Viewer, report: ReportState): LayerCont
   void load();
   return {
     retry: () => { void load(); },
+        setVisible(visible: boolean) { show = visible; if (current) current.show = visible; viewer.scene.requestRender(); },
     destroy() { disposed = true; generation += 1; clear(); },
   };
 }

@@ -4,9 +4,9 @@ body { margin: 0; }
 button, select, input { font: inherit; }
 button { cursor: pointer; }
 button:disabled { cursor: wait; }
-button:focus-visible, a:focus-visible { outline: 3px solid #c07720; outline-offset: 3px; }
+button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible { outline: 3px solid #c07720; outline-offset: 3px; }
 a { color: #125d70; text-underline-offset: 3px; }
-.app-shell { height: 100dvh; min-height: 680px; display: grid; grid-template-rows: auto minmax(0, 1fr) auto; }
+.app-shell { height: 100dvh; min-height: 680px; display: grid; grid-template-rows: auto auto minmax(0, 1fr) auto; }
 .app-header { padding: 16px 24px; display: flex; justify-content: space-between; align-items: center; background: #fff; border-bottom: 1px solid #ccd6da; }
 h1 { margin: 3px 0 0; font-size: 24px; font-weight: 650; letter-spacing: .04em; }
 .eyebrow { margin: 0; font-size: 10px; letter-spacing: .18em; color: #56717d; }
@@ -38,3 +38,35 @@ h2 { font-size: 18px; margin: 0 0 8px; }
 .sample-cell button { width: 100%; font-size: 12px; }
 .source-notes { margin: 16px 0; font-size: 12px; line-height: 1.8; }
 .source-notes summary { cursor: pointer; font-weight: 600; }
+.totals { display: grid; gap: 3px; text-align: right; font-variant-numeric: tabular-nums; }
+.totals span { font-size: 22px; font-weight: 650; }
+.totals small { color: #526873; }
+.year-control { background: #fff; padding: 10px 24px 14px; border-bottom: 1px solid #ccd6da; }
+.year-control label { display: flex; gap: 12px; align-items: baseline; font-size: 13px; }
+.year-control strong { font-size: 21px; }
+.year-control input { width: 100%; accent-color: #125d70; }
+.year-ticks { display: flex; justify-content: space-between; font-size: 11px; color: #526873; }
+.map-tools { position: absolute; top: 12px; left: 12px; max-width: calc(100% - 350px); pointer-events: none; font-size: 11px; }
+.map-tools > * { pointer-events: auto; }
+.camera-controls { display: flex; gap: 6px; }
+button { border: 1px solid #acc2c9; border-radius: 4px; background: #fff; padding: 7px 10px; color: #1b5262; }
+button:disabled { opacity: .55; cursor: not-allowed; }
+.map-status { margin-top: 8px; padding: 9px 12px; width: 265px; border-radius: 5px; background: #ffffffed; max-height: 270px; overflow: auto; }
+.map-status summary { cursor: pointer; }
+.map-status .load-states { margin: 5px 0 0; }
+.map-status .load-states li { padding: 6px 0; gap: 3px; }
+.mesh-details label { display: block; font-size: 11px; margin: 10px 0 6px; }
+.mesh-details select { width: 100%; padding: 7px 3px; background: white; color: #1c303b; border: 1px solid #acc2c9; }
+.mesh-details dl { font-size: 12px; }
+.mesh-details dl > div { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #d9e1e4; gap: 6px; }
+.mesh-details dd { margin: 0; text-align: right; font-variant-numeric: tabular-nums; }
+.change-state { font-weight: 650; }
+.layer-controls { margin: 20px 0; padding: 12px; border: 1px solid #ccd6da; display: grid; gap: 10px; }
+.layer-controls label { display: flex; align-items: center; gap: 6px; }
+.layer-controls input { accent-color: #125d70; }
+.layer-controls output { margin-left: auto; }
+.legend { font-size: 12px; line-height: 1.6; }
+.legend summary { font-weight: 650; cursor: pointer; }
+.legend ul { list-style: none; padding: 0; }
+.legend li { display: flex; align-items: center; gap: 8px; margin: 5px 0; }
+.swatch { width: 18px; height: 12px; border: 1px solid #64748b; flex: 0 0 auto; }

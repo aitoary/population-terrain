@@ -30,10 +30,20 @@ export function createViewer(container: HTMLElement, onImageryError: (message: s
     infoBox: false,
     selectionIndicator: false,
     shadows: false,
+    contextOptions: { webgl: { antialias: false } },
+    msaaSamples: 1,
+    // Avoid multi-target floating-point transparency passes on integrated/software GPUs.
+    orderIndependentTranslucency: false,
     requestRenderMode: true,
     maximumRenderTimeChange: Infinity,
   });
-  viewer.scene.globe.depthTestAgainstTerrain = true;
+  // Software GL otherwise queues terrain/transparent redraws faster than it can consume them.
+    const gl = viewer.scene.canvas?.getContext?.('webgl2');
+    const debug = gl?.getExtension('WEBGL_debug_renderer_info');
+    const software = debug && /SwiftShader|llvmpipe|software/i.test(String(gl!.getParameter(debug.UNMASKED_RENDERER_WEBGL)));
+    viewer.resolutionScale = software ? 0.5 : 0.75;
+    viewer.targetFrameRate = software ? 10 : 30;
+    viewer.scene.globe.depthTestAgainstTerrain = true;
   const imagery = new UrlTemplateImageryProvider({
     url: DATA_SOURCES.imagery.url,
     minimumLevel: DATA_SOURCES.imagery.minimumLevel,
@@ -50,7 +60,7 @@ export function createViewer(container: HTMLElement, onImageryError: (message: s
   ));
   viewer.camera.lookAt(
     Cartesian3.fromDegrees(MIYAKO_STATION.longitude, MIYAKO_STATION.latitude),
-    new HeadingPitchRange(CesiumMath.toRadians(10), CesiumMath.toRadians(-42), 4500),
+    new HeadingPitchRange(CesiumMath.toRadians(10), CesiumMath.toRadians(-42), 2800),
   );
   viewer.camera.lookAtTransform(Matrix4.IDENTITY);
   viewer.scene.requestRender();
@@ -112,7 +122,7 @@ export function connectTerrain(
         stableSince ??= performance.now();
         if (performance.now() - stableSince >= 1000) {
           clearInterval(settledTimer);
-          report({ status: 'ready', message: '現在視点の地形・背景タイル読込済み' });
+          report({ status: 'ready', message: '地形接続済み · 視点移動時はタイルを追加読込' });
           viewer.scene.requestRender();
         }
       }, 200);
