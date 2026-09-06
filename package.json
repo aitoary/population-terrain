@@ -13,6 +13,7 @@
     "test:browser": "node scripts/browser_smoke.mjs",
     "data:acquire": "python3 scripts/acquire_data.py",
     "data:prepare": ".venv/bin/python scripts/prepare_population.py",
+        "data:verify": ".venv/bin/python scripts/verify_data.py",
     "test:python": ".venv/bin/python -m unittest discover -s scripts -p 'test_*.py'"
   },
   "dependencies": {

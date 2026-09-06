@@ -11,6 +11,7 @@ import path from 'node:path';
 import { setTimeout as sleep } from 'node:timers/promises';
 import { fileURLToPath } from 'node:url';
 import { stripVTControlCharacters } from 'node:util';
+import { checkMvp, waitMvpRendered } from './browser_mvp_checks.mjs';
 
 const ROOT = fileURLToPath(new URL('../', import.meta.url));
 const require = createRequire(import.meta.url);
@@ -28,9 +29,14 @@ const STATIC_DIRECTORIES = ['Workers', 'Assets', 'ThirdParty', 'Widgets'];
 const ION_HOSTS = ['api.cesium.com', 'assets.cesium.com', 'ion.cesium.com'];
 const TERRAIN_METADATA_URL = 'https://tile.plateauview.mlit.go.jp/terrain/layer.json';
 const TERRAIN_FAULT = 'terrain-metadata-503';
-const USAGE = `Usage: node scripts/browser_smoke.mjs <dev|preview> [--stage <base|map|cells>]
+const USAGE = `Usage: node scripts/browser_smoke.mjs <dev|preview> [--stage <base|map|cells|mvp>]
 
-Also accepts --stage=cells or stage=cells. The default stage is base.
+Also accepts --stage=mvp or stage=mvp. The default stage is base (historical).
+For the current app use mvp. Its default suite checks all 11 years.
+MVP_SUITE=controls checks controls; MVP_FOCUS=all|station-coast|slope|low-population|zero checks one camera/picking view.
+MVP_YEARS=2050 limits numeric checks for focus/control runs; omit it for all 11 years.
+MVP_FAULT=population|terrain|buildings|border checks one initial 503 and real independent retry.
+Run these as separate bounded invocations, not concurrent GPU benchmarks.
 CHROME_PATH overrides /Applications/Google Chrome.app/Contents/MacOS/Google Chrome.
 CESIUM_BASE_URL overrides the static URL prefix (window.CESIUM_BASE_URL or /cesium/).
 CHECK_TERRAIN_FAILURE=1 is supported only with preview --stage cells. It injects
@@ -54,8 +60,8 @@ function parseArguments(args) {
     else if (option.startsWith('--stage=')) value = option.slice('--stage='.length);
     else if (option.startsWith('stage=')) value = option.slice('stage='.length);
     else throw new Error(`Unknown option: ${option}`);
-    if (stageSpecified || !['base', 'map', 'cells'].includes(value)) {
-      throw new Error('Specify stage once, using base, map, or cells.');
+    if (stageSpecified || !['base', 'map', 'cells', 'mvp'].includes(value)) {
+      throw new Error('Specify stage once, using base, map, cells, or mvp.');
     }
     stage = value;
     stageSpecified = true;
@@ -106,6 +112,15 @@ function withinDirectory(parent, child) {
 
 async function main({ mode, stage }) {
   const checkTerrainFailure = process.env.CHECK_TERRAIN_FAILURE === '1';
+  if (process.env.MVP_FOCUS && !['all', 'station-coast', 'slope', 'low-population', 'zero'].includes(process.env.MVP_FOCUS)) throw new Error('Invalid MVP_FOCUS');
+  if (process.env.MVP_SUITE && !['years', 'controls', 'focus'].includes(process.env.MVP_SUITE)) throw new Error('Invalid MVP_SUITE');
+  if (process.env.MVP_SUITE === 'focus' && !process.env.MVP_FOCUS) throw new Error('focus suite requires MVP_FOCUS');
+  if (process.env.MVP_YEARS && !process.env.MVP_YEARS.split(',').every((year) => /^20[0-9]{2}$/.test(year) && Number(year) >= 2020 && Number(year) <= 2070 && Number(year) % 5 === 0)) throw new Error('Invalid MVP_YEARS');
+  const mvpFault = process.env.MVP_FAULT;
+  if (mvpFault && (stage !== 'mvp' || !['population', 'terrain', 'buildings', 'border'].includes(mvpFault))) throw new Error('MVP_FAULT requires mvp and population/terrain/buildings/border');
+  let injectMvpFault = Boolean(mvpFault);
+  const injectedMvpRequests = new Set();
+  const manifest = mvpFault ? JSON.parse(await readFile(path.join(ROOT, 'data/source-manifest.json'), 'utf8')) : null;
   if (checkTerrainFailure && (mode !== 'preview' || stage !== 'cells')) {
     throw new Error('CHECK_TERRAIN_FAILURE=1 requires preview --stage cells.');
   }
@@ -117,7 +132,9 @@ async function main({ mode, stage }) {
   const { signal } = controller;
   const port = mode === 'dev' ? 5173 : 4173;
   const origin = `http://127.0.0.1:${port}`;
-  const stem = `browser-${stage}-${mode}`;
+  const suffix = `${process.env.MVP_YEARS ? `-${process.env.MVP_YEARS.replaceAll(',', '-')}` : ''}${process.env.MVP_FOCUS ? `-${process.env.MVP_FOCUS}` : ''}${process.env.MVP_SUITE === 'controls' ? '-controls' : ''}`;
+  const stem = `browser-${stage}-${mode}${mvpFault ? `-fault-${mvpFault}` : ''}${suffix}`;
+  const mvpFaultUrl = mvpFault === 'terrain' ? TERRAIN_METADATA_URL : mvpFault === 'buildings' ? manifest.sources.buildings.url : `${origin}/data/miyako-${mvpFault}.geojson`;
   const artifactDirectory = path.join(ROOT, 'artifacts');
   const jsonPath = path.join(artifactDirectory, `${stem}.json`);
   const screenshotPath = path.join(artifactDirectory, `${stem}.png`);
@@ -154,7 +171,7 @@ async function main({ mode, stage }) {
     runTimeoutMs: RUN_TIMEOUT_MS,
     cleanupTimeoutMs: CLEANUP_TIMEOUT_MS,
     timedOut: false,
-    scope: 'Initial ready view and three focus actions in cells mode; not an exhaustive 410-tile validation.',
+    scope: stage === 'mvp' ? 'All 692 cells; suite/years/focus/fault selected by MVP_* environment. Inspect checks for exact coverage. Not an exhaustive 410-tile validation.' : 'Historical base/map/three-cell smoke.',
     environment: {
       platform: os.platform(),
       osRelease: os.release(),
@@ -412,7 +429,7 @@ async function main({ mode, stage }) {
       row.status = response.status();
       row.contentType = headers['content-type'] ?? null;
       row.responseAtMs = elapsed();
-      const expected = injectedTerrainRequests.has(request) && row.status === 503 &&
+      const expected = (injectedTerrainRequests.has(request) || injectedMvpRequests.has(request)) && row.status === 503 &&
         headers['x-browser-smoke-fault'] === TERRAIN_FAULT;
       const expectation = expected ? { expected: true, reason: TERRAIN_FAULT } : {};
       Object.assign(row, expectation);
@@ -454,20 +471,20 @@ async function main({ mode, stage }) {
         const text = message.text();
         // Only Chrome's resource-error log for the currently injected URL is
         // expected. App exceptions, other URLs/statuses, and retry failures are not.
-        const expected = injectTerrainFailure && type === 'error' &&
-          report.terrainFailure.injectedRequestIds.length > 0 && location.url === TERRAIN_METADATA_URL &&
-          /^Failed to load resource: the server responded with a status of 503(?: \([^)]*\))?$/.test(text);
+        const expected = type === 'error' && /^Failed to load resource: the server responded with a status of 503(?: \([^)]*\))?$/.test(text) &&
+          ((injectTerrainFailure && report.terrainFailure.injectedRequestIds.length > 0 && location.url === TERRAIN_METADATA_URL) ||
+           (injectedMvpRequests.size > 0 && location.url === mvpFaultUrl));
         report.console.push({
           atMs: elapsed(), type, text: redact(text),
           location: { ...location, url: redact(location.url) }, duringCleanup: cleaningUp,
           ...(expected ? {
             expected: true, reason: TERRAIN_FAULT,
-            relatedRequestIds: [...report.terrainFailure.injectedRequestIds],
+            relatedRequestIds: checkTerrainFailure ? [...report.terrainFailure.injectedRequestIds] : [...injectedMvpRequests].map((request) => recordRequest(request).id),
           } : {}),
         });
         // Preserve normal-mode recording semantics; the opt-in fault regression
         // additionally rejects unrelated console errors instead of masking them.
-        if (checkTerrainFailure && !cleaningUp && type === 'error' && !expected) {
+        if ((checkTerrainFailure || mvpFault) && !cleaningUp && type === 'error' && !expected) {
           fail('consoleerror', new Error(text), { url: redact(location.url) });
         }
       });
@@ -542,7 +559,11 @@ async function main({ mode, stage }) {
           report.policyViolations.push({ requestId: row.id, url: row.url, reason, atMs: elapsed() });
           fail('request-policy', new Error(`${reason}: ${row.url}`), { requestId: row.id });
           await route.abort('blockedbyclient');
-        } else if (injectTerrainFailure && request.method() === 'GET' && url.href === TERRAIN_METADATA_URL) {
+        } else if (injectMvpFault && request.method() === 'GET' && url.href === mvpFaultUrl) {
+                  injectedMvpRequests.add(request);
+                  recordRequest(request);
+                  await route.fulfill({ status: 503, contentType: 'application/json', headers: { 'access-control-allow-origin': origin, 'cache-control': 'no-store', 'x-browser-smoke-fault': TERRAIN_FAULT }, body: JSON.stringify({ error: `Intentional ${mvpFault} failure` }) });
+                } else if (injectTerrainFailure && request.method() === 'GET' && url.href === TERRAIN_METADATA_URL) {
           const row = recordRequest(request);
           injectedTerrainRequests.add(request);
           report.terrainFailure.injectedRequestIds.push(row.id);
@@ -567,7 +588,41 @@ async function main({ mode, stage }) {
     page = await context.newPage();
   }
 
-  async function waitForStage() {
+  async function checkMvpFailureAndRetry() {
+      const key = mvpFault === 'population' ? 'data' : mvpFault;
+      await page.locator(`[data-testid="${key}-status"][data-state="error"]`).waitFor({ timeout: remaining() });
+      await page.locator('[data-testid="map-viewport"][data-viewer-ready="true"]').waitFor({ timeout: remaining() });
+      const unaffected = ['data', 'buildings', 'terrain', 'border', 'population'].filter((item) => item !== key && !(['population', 'terrain'].includes(mvpFault) && item === 'population'));
+      await Promise.all(unaffected.map((item) => page.locator(`[data-testid="${item}-status"][data-state="ready"]`).waitFor({ state: 'attached', timeout: remaining() })));
+      await page.evaluate(() => { window.__faultViewer = window.__mvpViewer; });
+      const source = JSON.parse(await readFile(path.join(ROOT, 'public/data/miyako-population.geojson'), 'utf8'));
+      if (mvpFault !== 'population') {
+        const zero = source.features.find((f) => f.properties.population[2070] === 0);
+        await page.locator('#population-year').fill('2070');
+        await page.locator('#mesh-select').selectOption(zero.id);
+        if (await page.locator('[data-testid="mesh-details"]').getAttribute('data-population') !== '0') throw new Error('Fault lost real zero numeric access');
+        await page.locator('#mesh-select').selectOption('594137654');
+        await page.locator('#population-year').fill('2050');
+        if (await page.locator('[data-testid="mesh-details"]').getAttribute('data-population') !== '377.5496') throw new Error('Fault lost station numeric access');
+      } else if (!(await page.locator('[data-testid="data-status"]').innerText()).includes('人口の取得・検査失敗')) throw new Error('Missing named population error');
+      const failurePath = path.join(artifactDirectory, `${stem}-before-retry.png`);
+      await page.screenshot({ path: failurePath, timeout: remaining(30000) });
+      const before = report.requests.length;
+      const label = { population: '人口', terrain: '地形', buildings: '建物', border: '市境' }[mvpFault];
+      injectMvpFault = false;
+      await page.getByRole('button', { name: `${label}を再試行`, exact: true }).evaluate((button) => button.click(), undefined, { timeout: remaining() });
+      await waitForStage();
+      const identities = await page.evaluate(() => window.__faultViewer === window.__mvpViewer && window.__mvp.layer.source.entities.values.length === 692);
+      if (!identities) throw new Error('Retry recreated viewer or lost cell geometry');
+      const retryRequests = report.requests.slice(before).filter((r) => /miyako-.*geojson|data-meta\.json|layer\.json|tileset\.json/.test(r.url));
+      const unrelated = retryRequests.filter((r) => mvpFault === 'population' ? !/miyako-population\.geojson|data-meta\.json/.test(r.url) : r.url !== mvpFaultUrl);
+      if (unrelated.length) throw new Error(`Retry fetched unrelated fixed resources: ${JSON.stringify(unrelated)}`);
+      if (!retryRequests.some((r) => r.url === mvpFaultUrl && r.status === 200)) throw new Error('No real HTTP 200 recovery');
+      report.mvpFault = { target: mvpFault, unaffectedReady: unaffected, numericAccess: mvpFault !== 'population', failureScreenshot: relativePath(failurePath), injectedRequests: injectedMvpRequests.size, retryRequests, viewerRetained: true, cellsAfterRetry: 692 };
+      report.checks.push({ name: `independent-${mvpFault}-failure-named-error-real-retry`, passed: true });
+    }
+
+    async function waitForStage() {
     const viewport = page.locator('[data-testid="map-viewport"][data-viewer-ready="true"]');
     await viewport.waitFor({ state: 'visible', timeout: remaining() });
     await viewport.locator('canvas').waitFor({ state: 'visible', timeout: remaining() });
@@ -575,7 +630,8 @@ async function main({ mode, stage }) {
     if (canvasCount !== 1) throw new Error(`Expected one map canvas, found ${canvasCount}.`);
     report.checks.push({ name: 'viewer-ready-and-one-canvas', passed: true, atMs: elapsed() });
     const statuses = stage === 'base' ? [] : ['buildings-status', 'terrain-status'];
-    if (stage === 'cells') statuses.push('population-status');
+    if (stage === 'cells' || stage === 'mvp') statuses.push('population-status');
+        if (stage === 'mvp') statuses.push('border-status', 'data-status');
     await Promise.all(statuses.map(async (testId) => {
       await page.locator(`[data-testid="${testId}"][data-state="ready"]`)
         .waitFor({ state: 'attached', timeout: remaining() });
@@ -806,7 +862,8 @@ async function main({ mode, stage }) {
     await waitForVite();
     await launchChrome(chromium);
     remaining();
-    await page.goto(origin, { waitUntil: 'domcontentloaded', timeout: remaining(30_000) });
+    await page.goto(stage === 'mvp' ? `${origin}/?acceptance=1` : origin, { waitUntil: 'domcontentloaded', timeout: remaining(30_000) });
+    if (mvpFault) await checkMvpFailureAndRetry();
     if (checkTerrainFailure) await checkTerrainFailureAndRetry();
     await waitForStage();
     if (checkTerrainFailure) {
@@ -826,10 +883,23 @@ async function main({ mode, stage }) {
       innerHeight: innerHeight,
     }));
     await sleep(SETTLE_MS, undefined, { signal });
+    if (stage === 'mvp') {
+      report.visibility = await page.evaluate(() => ({
+        sources: Array.from({ length: window.__mvp.viewer.dataSources.length }, (_, i) => {
+          const source = window.__mvp.viewer.dataSources.get(i);
+          return { name: source.name, show: source.show, total: source.entities.values.length, visible: source.entities.values.filter((entity) => entity.show).length };
+        }),
+        rectangle: window.__mvp.viewer.camera.computeViewRectangle(),
+        primitives: window.__mvp.viewer.scene.primitives.length,
+      }));
+      console.log('MVP visibility', JSON.stringify(report.visibility));
+      await waitMvpRendered(page, remaining);
+    }
     await recordWebGL('initial-ready');
-    await page.screenshot({ path: screenshotPath, fullPage: false, animations: 'disabled', timeout: remaining(8_000) });
+    await page.screenshot({ path: screenshotPath, fullPage: false, animations: 'disabled', timeout: remaining(30_000) });
     report.screenshots.main = relativePath(screenshotPath);
     await checkStaticAssets();
+    if (stage === 'mvp' && !mvpFault) await checkMvp({ page, report, root: ROOT, artifactDirectory, remaining, requests: report.requests });
     if (stage === 'cells') {
       const cells = page.locator('[data-testid="sample-cell"]');
       const measurements = await cells.evaluateAll((elements) => elements.map((element) => ({
@@ -882,7 +952,7 @@ async function main({ mode, stage }) {
     }
     try {
       if (browserServer) {
-        try { await bounded(browserServer.close(), 3_000, 'Graceful Chrome close timed out.'); }
+        try { await bounded(browserServer.close(), 8_000, 'Graceful Chrome close timed out.'); }
         catch (error) {
           fail('cleanup', error);
           await bounded(browserServer.kill(), 1_500, 'Forced Chrome close timed out.');
