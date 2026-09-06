@@ -1,0 +1,41 @@
+population-terrain — third-party distribution notices
+
+This application uses CesiumJS 1.145.0, @cesium/engine 26.3.0 and
+@cesium/widgets 16.2.0, Copyright 2011-2026 CesiumJS Contributors,
+licensed under Apache License 2.0, with separately licensed portions.
+The installed Cesium packages contain no separate NOTICE file: their full
+LICENSE.md, including patents and third-party attributions, is reproduced
+in THIRD_PARTY_LICENSES.txt. This file is an application distribution notice,
+not an invented upstream NOTICE.
+
+React and React DOM 19.2.8 and Scheduler 0.27.0 are MIT licensed.
+All collected copyright notices, license texts and disclaimers are in
+THIRD_PARTY_LICENSES.txt. Keep that file with redistributed copies.
+THIRD_PARTY_PROVENANCE.json records actual bundled-package evidence and
+SHA-256 provenance of all copied Cesium static assets.
+
+Cesium code is mechanically bundled/minified by Vite; its source is not
+locally patched. Cesium Workers, Assets, ThirdParty and Widgets files are
+copied unchanged except that 22 unused map previews and nine NavigationHelp
+images are excluded; their exact paths are recorded in THIRD_PARTY_PROVENANCE.json.
+No endorsement by Cesium or other licensors is implied.
+
+Copied textures/icons include Natural Earth public-domain data, James
+Hastings-Trew's Planetary Pixel Emporium imagery, sky imagery credited to
+NASA/Goddard Space Flight Center Scientific Visualization Studio
+(source: https://svs.gsfc.nasa.gov/3572/), and Mapbox Maki icons (CC0).
+Upstream Freepik/Flaticon CC BY 3.0 notices are retained even though the
+nine unused NavigationHelp images are excluded.
+See their source links and notices in THIRD_PARTY_LICENSES.txt. No font
+files or Cesium documentation fonts are included in the copied subtree.
+
+Limitations: prebuilt worker dependency versions, complete Rust/WASM linked
+components, exact image revisions, and third-party provider-thumbnail rights
+cannot all be independently established from the installed distribution.
+Identified Rust dependencies and available upstream terms are included;
+this is not a complete, independently verified binary SBOM or legal clearance.
+See docs/security-verification.md in the source repository before publishing.
+
+The application's MIT LICENSE is separate from these licenses and from the
+population, PLATEAU, terrain, and background-map data terms already credited
+in the application and README.

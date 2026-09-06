@@ -1,0 +1,59 @@
+{
+  "schemaVersion": 1,
+  "acquiredAt": "2026-09-06",
+  "package": {
+    "name": "@spz-loader/core",
+    "version": "0.3.1",
+    "metadataLicense": "Apache-2.0",
+    "repository": "https://github.com/drumath2237/spz-loader",
+    "tag": "v0.3.1",
+    "path": "packages/core"
+  },
+  "embeddedComponent": {
+    "name": "SPZ",
+    "repository": "https://github.com/nianticlabs/spz",
+    "commit": "cc5671d716740e02d57816d4a4a38d164926e695",
+    "submodulePath": "packages/core/lib/spz-wasm/spz",
+    "license": {
+      "spdxId": "MIT",
+      "copyright": "Copyright (c) 2024 Niantic Labs",
+      "file": "niantic-spz-LICENSE.txt",
+      "url": "https://raw.githubusercontent.com/nianticlabs/spz/cc5671d716740e02d57816d4a4a38d164926e695/LICENSE",
+      "sha256": "d2b852220d1043148f523c4154e8bf7d9c5e419aede33b4c94115cfc457e4714",
+      "acquiredAt": "2026-09-06"
+    }
+  },
+  "embeddedWasm": {
+    "sha256": "c1d21cd6ec1640d6d2003b5757e17d0d0d34ddeb1d8931158e7595fc6058823b",
+    "bytes": 167091,
+    "evidence": "Extracted during the preceding local license audit from node_modules/@spz-loader/core/dist/index.js and dist/assets/MapViewport-ByCa-Xzs.js. Not a reproducible upstream build claim."
+  },
+  "evidence": [
+    {
+      "kind": "installed-package-metadata",
+      "path": "node_modules/@spz-loader/core/package.json",
+      "finding": "Installed package declares version 0.3.1, Apache-2.0 metadata license, and the drumath2237/spz-loader repository."
+    },
+    {
+      "kind": "upstream-submodule-configuration",
+      "url": "https://raw.githubusercontent.com/drumath2237/spz-loader/v0.3.1/.gitmodules",
+      "finding": "The SPZ submodule points to https://github.com/nianticlabs/spz.git."
+    },
+    {
+      "kind": "upstream-tag-tree",
+      "url": "https://api.github.com/repos/drumath2237/spz-loader/git/trees/v0.3.1?recursive=1",
+      "treeSha": "83697be80e823255c03cdc12f1a4509a1a86edb1",
+      "finding": "The tag tree records packages/core/lib/spz-wasm/spz as a mode-160000 gitlink at cc5671d716740e02d57816d4a4a38d164926e695."
+    },
+    {
+      "kind": "upstream-build-script",
+      "url": "https://raw.githubusercontent.com/drumath2237/spz-loader/v0.3.1/packages/core/lib/spz-wasm/build.sh",
+      "finding": "The Emscripten build uses WASM=1, SINGLE_FILE=1 and USE_ZLIB=1."
+    }
+  ],
+  "limitations": [
+    "The package's Apache-2.0 metadata does not replace the embedded Niantic SPZ component's MIT license.",
+    "The upstream tag/submodule relationship is source provenance, not proof of a reproducible source-to-binary build for the recorded WASM hash.",
+    "This record is not a complete linked-component SBOM; zlib, compiler/runtime support and other linked components require separate provenance and license review."
+  ]
+}
