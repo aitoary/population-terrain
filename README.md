@@ -84,16 +84,23 @@ npm run build
 実ブラウザー検証は、既存Google Chromeを専用の一時プロファイルで起動します。自分で起動したVite/Chromeは終了時に破棄し、通常のChromeプロファイルには触れません。コマンドは各120秒上限（cleanup最大15秒）です。
 
 ```sh
-npm run test:browser -- dev --stage mvp
+# 通常本番: 公開UIのみ。?acceptance=1 でも検査用オブジェクトを公開しない
 npm run build
 npm run test:browser -- preview --stage mvp
+npm run test:headers # 有限のローカル Workers Static Assets（Viteではない）
+
+# 詳細受入: 専用モードのみ。dist-acceptance は絶対にデプロイしない
+npm run build:acceptance
+BROWSER_ACCEPTANCE=1 npm run test:browser -- preview --stage mvp
 # 各操作は別の120秒上限実行に分割
-MVP_SUITE=controls MVP_YEARS=2050 npm run test:browser -- preview --stage mvp
-MVP_FOCUS=zero MVP_YEARS=2050 npm run test:browser -- dev --stage mvp
-MVP_FAULT=terrain npm run test:browser -- preview --stage mvp
+BROWSER_ACCEPTANCE=1 MVP_SUITE=controls MVP_YEARS=2050 npm run test:browser -- preview --stage mvp
+BROWSER_ACCEPTANCE=1 MVP_FOCUS=zero MVP_YEARS=2050 npm run test:browser -- dev --stage mvp
+BROWSER_ACCEPTANCE=1 MVP_FAULT=terrain npm run test:browser -- preview --stage mvp
+# 最後は常に通常本番成果物を生成・検査
+npm run build
 ```
 
-既定の実行ファイルは `/Applications/Google Chrome.app/Contents/MacOS/Google Chrome`。必要なら `CHROME_PATH` 環境変数で変更します。ブラウザーの自動ダウンロードは行いません。`artifacts/` にHTTP・WebGL・実測B/L・スクリーンショット・cleanup記録を出力します。現在は `--stage mvp` を指定してください（既定suiteは全11年）。`MVP_FOCUS` は `all` / `station-coast` / `slope` / `low-population` / `zero`、`MVP_FAULT` は `population` / `terrain` / `buildings` / `border`。全12実行のコマンドは [検証手順](docs/verification.md#再実行) に記載。`base/map/cells` は過去版の検証用です。
+既定の実行ファイルは `/Applications/Google Chrome.app/Contents/MacOS/Google Chrome`。必要なら `CHROME_PATH` 環境変数で変更します。ブラウザーの自動ダウンロードは行いません。`artifacts/` にHTTP・WebGL・実測B/L・スクリーンショット・cleanup記録を出力します。現在は `--stage mvp` を指定してください（通常モードは公開UI、`BROWSER_ACCEPTANCE=1` の既定suiteは全11年）。`MVP_FOCUS` は `all` / `station-coast` / `slope` / `low-population` / `zero`、`MVP_FAULT` は `population` / `terrain` / `buildings` / `border`。全12実行のコマンドは [検証手順](docs/verification.md#再実行) に記載。`base/map/cells` は過去版の検証用です。
 
 Zed Agentのsandboxがlocalhost待受を拒否する場合、有限時間のブラウザーテストに対する実行許可が必要です。npmキャッシュが書込不可なら、`npm --cache .npm-cache ci` を使えます。グローバル設定や所有者の変更は不要です。
 
@@ -121,3 +128,9 @@ Chrome 152 / Playwright 1.63 / ANGLE SwiftShader（ソフトウェアWebGL2）�
 | 背景地図 | [地理院タイル（淡色地図）](https://maps.gsi.go.jp/development/ichiran.html) · [利用規約](https://www.gsi.go.jp/kikakuchousei/kikakuchousei40182.html) | XYZ ZL9〜18をリアルタイム読込 |
 
 ソフトウェアは[MIT License](LICENSE)。データの利用条件とは別です。
+
+### 第三者ソフトウェア・セキュリティ検証
+
+`npm run build` / `npm run build:acceptance` は、実際にバンドルされたモジュールとCesium配布物を検査し、`public/THIRD_PARTY_LICENSES.txt`・`public/THIRD_PARTY_PROVENANCE.json` を再生成して成果物に同梱します。`public/NOTICE.txt` も配布対象です。依存更新後は生成差分と未解決の利用条件を再レビューしてください。ネットワーク取得はビルド時に行いません。
+
+**[今回のセキュリティ修正・新しいローカル検証・ライセンス監査の限界](docs/security-verification.md)**。上記MVP記録と `docs/verification.md` / `docs/mvp-verification.json` は従来の履歴です。公開環境のヘッダーや全バイナリーの利用条件を確認済みという意味ではありません。
