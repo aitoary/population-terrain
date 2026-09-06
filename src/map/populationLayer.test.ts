@@ -1,9 +1,10 @@
 import { readFileSync } from 'node:fs';
-import { Cartesian3, Cartographic, HeightReference, JulianDate, Math as CesiumMath } from 'cesium';
+import { Cartesian3, Cartographic, Color, ConstantProperty, HeightReference, JulianDate, Math as CesiumMath } from 'cesium';
 import { describe, expect, it } from 'vitest';
 import { SAMPLE_CELLS } from '../config/sampleCells';
 import { parsePopulation } from '../data/loadPopulation';
-import type { MeshFeature } from '../domain/types';
+import { YEARS, type MeshFeature } from '../domain/types';
+import { CHANGE_STYLES, changeCategory, changeRate } from '../domain/population';
 import { buildPopulationLayer } from './populationLayer';
 import type { TerrainBaseResult } from './terrainSampling';
 
@@ -16,6 +17,71 @@ function base(feature: MeshFeature, height = 102): TerrainBaseResult {
 const bases = new Map(features.map((feature) => [feature.id, base(feature)]));
 const withPopulation = (population: number | null): MeshFeature => ({
   ...features[0]!, properties: { ...features[0]!.properties, population: { ...features[0]!.properties.population, 2050: population } },
+});
+
+describe('T07 full-city updates', () => {
+  it('keeps all 692 entities, bases, properties and original corners through all 11 years', () => {
+    const all = collection.features;
+    const heights = new Map(all.map((feature, index) => [feature.id, base(feature, index + 2)]));
+    const layer = buildPopulationLayer(all, heights, 2050);
+    const originals = layer.source.entities.values.map((entity) => ({ entity, height: entity.polygon!.height, hierarchy: entity.polygon!.hierarchy, extrusion: entity.polygon!.extrudedHeight, material: entity.polygon!.material, properties: entity.properties }));
+    for (const year of YEARS) {
+      layer.setYear(year);
+      expect(layer.source.entities.values).toHaveLength(692);
+      for (const [index, feature] of all.entries()) {
+        const original = originals[index]!;
+        const entity = layer.source.entities.getById(`mesh:${feature.id}`)!;
+        const polygon = entity.polygon!;
+        const value = feature.properties.population[year]!;
+        expect(entity).toBe(original.entity);
+        expect(entity.properties).toBe(original.properties);
+        expect(polygon.height).toBe(original.height);
+        expect(polygon.hierarchy).toBe(original.hierarchy);
+        expect(polygon.extrudedHeight).toBe(original.extrusion);
+        expect(polygon.material).toBe(original.material);
+        expect(polygon.extrudedHeight).toBeInstanceOf(ConstantProperty);
+        expect(polygon.extrudedHeight!.getValue(at) - polygon.height!.getValue(at)).toBeCloseTo(value * 0.5, 10);
+        expect(entity.properties!.population!.getValue(at)).toBe(value);
+        expect(entity.properties!.year!.getValue(at)).toBe(year);
+        const color = Color.fromCssColorString(CHANGE_STYLES[changeCategory(changeRate(feature.properties.population[2020], value))].color).withAlpha(value === 0 ? 0.1 : 0.25);
+        expect(polygon.material!.getValue(at).color).toEqual(color);
+        const positions: Cartesian3[] = polygon.hierarchy!.getValue(at).positions;
+        positions.forEach((point, vertex) => {
+          const cartographic = Cartographic.fromCartesian(point);
+          expect(CesiumMath.toDegrees(cartographic.longitude)).toBeCloseTo(feature.geometry.coordinates[0][vertex]![0], 10);
+          expect(CesiumMath.toDegrees(cartographic.latitude)).toBeCloseTo(feature.geometry.coordinates[0][vertex]![1], 10);
+        });
+      }
+    }
+    layer.destroy(); layer.destroy(); expect(layer.source.entities.values).toHaveLength(0);
+    layer.setYear(2050); expect(layer.source.entities.values).toHaveLength(0);
+  });
+  it('updates opacity, selection and visibility without changing geometry', () => {
+    const layer = buildPopulationLayer(features, bases, 2050);
+    const entity = layer.source.entities.values[0]!;
+    const hierarchy = entity.polygon!.hierarchy;
+    layer.setOpacity(0.8); layer.setSelectedMesh(features[0]!.id);
+    expect(entity.polygon!.material!.getValue(at).color.alpha).toBe(0.8);
+    expect(entity.polyline!.width!.getValue(at)).toBe(5);
+    const selectedPoint = Cartographic.fromCartesian(entity.polyline!.positions!.getValue(at)[0]);
+    expect(selectedPoint.height).toBeCloseTo(entity.polygon!.extrudedHeight!.getValue(at), 6);
+    layer.setYear(2070);
+    expect(entity.polyline!.material!.getValue(at).color).toEqual(Color.WHITE);
+    layer.setSelectedMesh(null); expect(entity.polyline!.width!.getValue(at)).toBe(2);
+    layer.setVisible(false); expect(layer.source.show).toBe(false);
+    layer.setVisible(true); expect(layer.source.show).toBe(true);
+    expect(entity.polygon!.hierarchy).toBe(hierarchy);
+    expect(() => layer.setOpacity(Number.NaN)).toThrow();
+    expect(() => layer.setOpacity(0)).toThrow();
+    expect(() => layer.setYear(2021 as 2020)).toThrow();
+  });
+  it('transitions null to real values and back without treating null as zero', () => {
+    const feature = withPopulation(null);
+    const layer = buildPopulationLayer([feature], bases, 2050);
+    layer.setYear(2020); expect(layer.rows[0]!.length).toBe(653.5813 * 0.5);
+    layer.setYear(2050); expect(layer.rows[0]!.length).toBeNull();
+    expect(layer.source.entities.values[0]!.polygon!.extrudedHeight).toBeUndefined();
+  });
 });
 
 describe('T06 real-cell extrusion', () => {
