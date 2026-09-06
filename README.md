@@ -2,14 +2,15 @@
 
 宮古市に割り当てられた500m将来推計人口と、PLATEAU **2025年度の建物LOD1**を重ねるPC向けWebアプリです。React + Vite + TypeScript + CesiumJS、人口前処理はPython + pyprojです。
 
-**現在は計画書のT01〜T06までの技術検証版です。MVP全体の完成ではありません。**
+**T01〜T12のローカルPC向けMVPを実装・受入検証済みです。**
 
-- 692セル・2020〜2070の11年のPTN系列を取得・検査済み。
-- 画面は**2050年固定・代表3セルだけ**を描画します。人口は実データで、建物・地形・背景地図は公式配信を使用します。
-- 年スライダー、全692セルの描画、任意メッシュ選択、市境の描画はまだありません（T07以降）。行政界の前処理は済んでいます。
-- 公開デプロイ、年齢階級別、他都市比較、CityGML変換は実装していません。
+- 宮古市の実データ**692セル・2020〜2070の11年（5年刻み）のPTN系列**を3D表示。初期年2050、初期選択は駅を含む `594137654`。
+- 年スライダー・キーボード操作、クリック/全ID選択、人口詳細・対象メッシュ合計、固定高さ/色の凡例。
+- 2025年度LOD1建物・人口・市境の独立切替、opacity 0.1〜0.8、駅/全体/選択セルの視点操作。
+- 人口・建物・地形・市境の独立したエラー/再試行。地形・建物が失敗しても人口数値を閲覧可能。0人は選択できる平面、nullは欠損のままです。
+- 年変更でViewer・建物・地形基準高を再作成せず、原本を再取得しません。公開デプロイ、年齢階級別、他都市比較、CityGML変換は対象外です。
 
-[計画書](docs/miyako-population-3d-mvp-plan.md) · [タスク別の変更・検証・未解決事項](docs/implementation-log.md) · [T06の実測・検証結果](docs/t06-verification.json)
+[計画書](docs/miyako-population-3d-mvp-plan.md) · [T01〜T12実装ログ](docs/implementation-log.md) · [MVP受入検証・画像・制約](docs/verification.md) · [機械可読の実測](docs/mvp-verification.json) · [過去のT06記録](docs/t06-verification.json)
 
 ## ローカル起動
 
@@ -20,7 +21,7 @@ npm ci
 npm run dev
 ```
 
-表示されたローカルURL（通常 `http://127.0.0.1:5173`）をPCブラウザーで開きます。右パネルの「このセルへ移動」で個別の柱を確認できます。右パネルは縦スクロールできます。
+表示されたローカルURL（通常 `http://localhost:5173`）を幅1280px以上のPCブラウザーで開きます。上部で年、右パネルでメッシュID・レイヤー・不透明度を操作します。地図上部の「選択メッシュへ」で個別セルへ移動。右パネルは縦スクロールでき、凡例・「データについて」があります。クリックが難しいセルや0人はID欄で選択できます。
 
 本番ビルドの確認：
 
@@ -68,7 +69,7 @@ JGD2011→WGS84では、現在のPROJが選択した操作は恒等変換（`pro
 - 比較するのは柱長Lであり、柱上端の地理的な高さではありません。Bは地形の精密な最大値ではないため、斜面で浮き・突き抜けが残り得ます。
 - 地形に接続できなくても数値行は参照可能です。高さ未取得のセルを高度0には描かず、明示的に再試行します。
 
-3セル：`594137654`（宮古駅）、`594137753`（駅北西の斜面）、`594137563`（駅南東の低人口）。本番データの代わりに合成値を配信する機能はありません。100→50人等の合成検査はテスト内だけです。
+目視検査セル：`594137654`（宮古駅）、`594137753`（斜面）、`594137563`（低人口）、`594115541`（2070年0人）。本番データの代わりに合成値を配信する機能はありません。100→50人等の合成検査はテスト内だけです。
 
 ## テスト
 
@@ -76,28 +77,37 @@ JGD2011→WGS84では、現在のPROJが選択した操作は恒等変換（`pro
 npm run typecheck
 npm test
 npm run test:python
+npm run data:verify
 npm run build
 ```
 
 実ブラウザー検証は、既存Google Chromeを専用の一時プロファイルで起動します。自分で起動したVite/Chromeは終了時に破棄し、通常のChromeプロファイルには触れません。コマンドは各120秒上限（cleanup最大15秒）です。
 
 ```sh
-npm run test:browser -- dev --stage cells
+npm run test:browser -- dev --stage mvp
 npm run build
-npm run test:browser -- preview --stage cells
-# 地形接続失敗でも数値が残り、再試行で復帰することを検査
-CHECK_TERRAIN_FAILURE=1 npm run test:browser -- preview --stage cells
+npm run test:browser -- preview --stage mvp
+# 各操作は別の120秒上限実行に分割
+MVP_SUITE=controls MVP_YEARS=2050 npm run test:browser -- preview --stage mvp
+MVP_FOCUS=zero MVP_YEARS=2050 npm run test:browser -- dev --stage mvp
+MVP_FAULT=terrain npm run test:browser -- preview --stage mvp
 ```
 
-既定の実行ファイルは `/Applications/Google Chrome.app/Contents/MacOS/Google Chrome`。必要なら `CHROME_PATH` 環境変数で変更します。ブラウザーの自動ダウンロードは行いません。`artifacts/` にHTTP・WebGL・実測B/L・スクリーンショット・cleanup記録を出力します。`--stage base` / `map` は前工程の検証用で、現在の3セルアプリには `cells` を指定してください。
+既定の実行ファイルは `/Applications/Google Chrome.app/Contents/MacOS/Google Chrome`。必要なら `CHROME_PATH` 環境変数で変更します。ブラウザーの自動ダウンロードは行いません。`artifacts/` にHTTP・WebGL・実測B/L・スクリーンショット・cleanup記録を出力します。現在は `--stage mvp` を指定してください（既定suiteは全11年）。`MVP_FOCUS` は `all` / `station-coast` / `slope` / `low-population` / `zero`、`MVP_FAULT` は `population` / `terrain` / `buildings` / `border`。全12実行のコマンドは [検証手順](docs/verification.md#再実行) に記載。`base/map/cells` は過去版の検証用です。
 
 Zed Agentのsandboxがlocalhost待受を拒否する場合、有限時間のブラウザーテストに対する実行許可が必要です。npmキャッシュが書込不可なら、`npm --cache .npm-cache ci` を使えます。グローバル設定や所有者の変更は不要です。
 
-### 検証の限界
+`npm run data:verify` は既存の `data/raw/` の固定原本と公開出力を読むだけです。再取得や出力更新をせず、全7,612値・692形状・市境・metadataを照合します。通常起動には原本もPythonも不要です。
 
-Chrome 152 / Playwright 1.63 / ANGLE SwiftShader（ソフトウェアWebGL2）で検証しています。スクリーンショット時の`GPU stall due to ReadPixels`警告とCesiumの大きなJSチャンク警告が残っています。実GPUのFPSや年切替性能の達成を示すものではありません。全410建物タイルの到達性、厳密な建物接地、公開環境は未検証です。
+### 最終結果・性能・限界
 
-最終検証はVitest 217件・Python 13件・型検査・ビルド・dev/previewブラウザーが成功。エディター診断は型エラー0件、Pythonのimport整形警告（Ruff I001）が1件残っています。詳細は検証記録を参照してください。
+2026-09-06：**Vitest 241件/10ファイル、Python 16件、読取専用データ検査、型検査、buildが成功**。有限ブラウザー12実行で9項目の受入、全692セル、全11年、4種類の独立retry、実0セルのクリック、camera・toggle・静的配信を確認。年操作中のネットワーク要求はdev/previewとも0件、Viewer・建物・B・カメラは同一です。
+
+Chrome 152 / Playwright 1.63 / ANGLE SwiftShader（ソフトウェアWebGL2）で、20ms UIタイマーの最大間隔は **dev456.9ms / preview280.1ms**、最長long taskは445ms /269ms。暫定「1秒以上の継続UI停止なし」をこの条件で確認しました。一方、入力から描画安定確認は **3.17〜6.63秒**（ハーネスの1秒安定待ち等を含む）。即時反映・実GPUのFPSを保証しません。
+
+画面外Entityは非表示にするだけで全692件を保持。MSAA/浮動小数点OITを無効化し、通常0.75解像度・30fps上限、検出したSwiftShader等は0.5解像度・10fps上限に制限します。画像の粗さ・透明な重なり順・ReadPixels警告、Cesium約4.15MBの遅延読込チャンク警告が残ります。全410建物タイルの到達性、厳密な建物接地、実GPU、公開環境、長時間利用は未検証です。エディター診断は0エラー。Ruff I001のimport整形警告が既存 `prepare_population.py` と新規 `verify_data.py` に各1件残ります（計2件）。後者は2回の限定的な整理後も残ったため、診断の一括無効化はしていません。
+
+詳細な計測条件・各実行秒数・目視したPNG・未検証範囲は [verification.md](docs/verification.md) に記録しています。
 
 ## データの出典・利用条件
 

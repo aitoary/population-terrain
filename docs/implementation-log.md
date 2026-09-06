@@ -1,4 +1,6 @@
-# T01〜T06 実装・検証記録
+# T01〜T12 実装・検証記録
+
+T01〜T06の記述は当時の履歴として保持。現在のMVPの判定は末尾のT07〜T12と [verification.md](./verification.md) を参照してください。
 
 計画書: [miyako-population-3d-mvp-plan.md](./miyako-population-3d-mvp-plan.md)
 
@@ -105,4 +107,48 @@
 
 - macOS 15.7.9 / x86_64、Node 22.22.1、npm 11.16.0、Python 3.14.7。
 - 通常の `~/.npm` キャッシュ書込みはAgent sandboxで拒否されたため、検証時は `npm --cache .npm-cache ...` を使用。所有者変更やグローバルインストールはしていない。
-- T06までの技術検証。全セル描画、年スライダー、完成版詳細UI、公開デプロイ等は未実装のまま残す。
+- T06完了時点では技術検証のみ。以下でT07〜T12を実装・検証した。公開デプロイ等の対象外項目は実施しない。
+
+## T07 — 全セル表示・年更新API（完了）
+
+- `src/map/populationLayer.ts` を全対象に拡張。`setYear` / `setOpacity` / `setVisible` / `setSelectedMesh` / `destroy` を提供。
+- Entity変更をまとめ、固定基準高BとConstantPropertyを再利用。年ごとにViewer・建物・TerrainSampler・基準高を再生成しない。nullは押し出さず欠損のまま、0は平面を保持。
+- 選択輪郭は白い5pxの上端輪郭。年の変更時も選択と上端B+Lを更新し、解除時は通常の基準面輪郭に戻す。
+- `populationLayer.test.ts` で全692件×11年の原典座標・長さ・色・property同一性、null遷移、opacity・visibility・destroyを検査。
+
+## T08 — 選択と視点（完了）
+
+- `src/map/selection.ts` はdrillPick結果の `mesh:` IDに加えてEntityインスタンスとsource内の同一性を照合。文字列や他レイヤーの同名Entityを拒否。イベントはcleanupで破棄。
+- 同期GPU readbackの過負荷を避け、drillPickを最大8ヒットに制限。深く隠れたセルにはID選択欄を用意。
+- `src/map/camera.ts` に駅（2800m斜め俯瞰）・全メッシュbbox・選択セル（Bを中心に1800m）を実装。旧flightを取り消し、通常の回転・ズーム・パンに戻す。
+- 駅/斜面/低人口/実0人口の実drillPick＋実ポインタークリックを確認。全体視点で全692 Entityの再表示とwheel zoom/globe dragを検査。
+
+## T09 — 年・レイヤー・凡例UI（完了）
+
+- `YearControl.tsx` / `LayerControls.tsx` / `Legend.tsx` はCesium非依存のprops/callback UI。
+- 2020〜2070をstep=5で操作、キーボード左右で5年移動。opacity 0.1〜0.8、建物/人口/市境切替、固定0.5m/人と色区分・0/nullの凡例。
+- UIの単体テストとproduction-previewの操作テストが成功。全年の補間・正規化・自動再生は追加しない。
+
+## T10 — 詳細・出典UI（完了）
+
+- `MeshDetails.tsx` / `DataNotes.tsx` / `Attribution.tsx` を実装。全692 ID欄、基準/選択人口、差分/率、状態ラベルを表示。
+- 0/null/基準0/0.1人未満を区別。2020調整基準・2025年度建物固定・公開整備範囲・2055以降仮定継続・1km無居住化処理・SHICODE抽出・非等面積・加工・利用条件を説明。
+- 出典リンクは既存の検証済み設定を再利用。秘密情報・新しいAPIキー・推測URLなし。
+
+## T11 — 統合・独立した読込とretry（完了）
+
+- `App.tsx` が年2050・選択594137654・opacity 0.25・全レイヤーONを初期値として一元管理。人口取得は地図初期化と独立し、地形失敗でも数値が使える。
+- `MapViewport.tsx` が全692セルのサンプリング/描画、市境1,823 LineString、camera/selectionの接続・cleanupを担当。人口、建物、地形、市境のエラーと再試行を分離。
+- 4種類の503注入で対象名・他レイヤーready・数値保持・同一Viewer・対象のみ実HTTP 200再取得・復旧後692セルを確認。年では再取得しない。
+- `visibility.ts` は近景の画面外Entityだけを非表示にし、全体視点で復元。元データや全件計算を削らない。地形サンプラーの9点/レベル12/max+2m/最大2並列/cacheを維持。
+- SwiftShaderでGPUキューが詰まる問題を実測。MSAA/OITを無効化し、通常0.75解像度・30fps上限、software判定時0.5解像度・10fps上限へ調整。画質と描画反映には制約を明記。建物LOD1/SSE24/全年共通は変更しない。
+
+## T12 — 受入・手順書（完了、2026-09-06）
+
+- `scripts/verify_data.py` と `test_verify_data.py`：原本再取得・公開ファイル書換えなしのオフライン検査。SHA-256、全7,612値、692形状、1,823境界線、metadataを照合。改変原本/出力を拒否。
+- `browser_smoke.mjs` のmvpモードと `browser_mvp_checks.mjs`：120秒＋cleanup15秒、Google Chrome/SwiftShaderのみ。全年・controls・単独focus・単独faultを分けて12実行成功。静的資産4ディレクトリもHTTP/バイト/hash検査。
+- 初期のtimeout、過剰GPU負荷、カメラ変更前のreadyを使った不十分な撮影を診断し修正。最終は新状態のrender後にgeometry/terrainの1秒安定を待ち、駅/沿岸・斜面・低人口・実0人口・全体の画像を目視した。
+- 最終：Vitest **241件/10ファイル**、Python **16件**、read-only data検査、型検査・build成功。dev/preview各11年で692セルの数値・色・長さ・リソース同一性を照合し、年操作中の要求0件。
+- UIタイマー最大停止間隔：dev456.9ms / preview280.1ms。long task最大445ms /269ms。暫定1秒停止未満の目標を達成。安定描画待ちは3.17〜6.63秒（1秒安定待ち等を含む）であり、即時描画やFPSの保証ではない。
+- 9項目のローカル受入を確認。必須機能の未解決ブロッカーなし。実GPU、全410建物タイル、厳密な接地、公開ホスティング、長時間運用は未検証。最終エディター診断は0エラー。Ruff I001は既存prepare_population.pyと新規verify_data.pyに各1件残る（後者は2回の限定整理後も残り、抑制していない）。
+- [verification.md](./verification.md)、[mvp-verification.json](./mvp-verification.json)、READMEに起動方法・実測・画像・制約を記録。`t06-verification.json` と原本/manifest/publicデータは不変。commit/push/deployなし。
