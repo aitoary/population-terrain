@@ -6,7 +6,8 @@ import { viteStaticCopy } from 'vite-plugin-static-copy';
 const cesiumSource = 'node_modules/cesium/Build/Cesium';
 const cesiumBaseUrl = 'cesium';
 
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
+  build: { outDir: mode === "acceptance" ? "dist-acceptance" : "dist" },
   plugins: [
     react(),
     viteStaticCopy({
@@ -18,7 +19,7 @@ export default defineConfig({
       })),
     }),
   ],
-  define: { CESIUM_BASE_URL: JSON.stringify(`/${cesiumBaseUrl}/`) },
+  define: { CESIUM_BASE_URL: JSON.stringify(`/${cesiumBaseUrl}/`), __ACCEPTANCE__: mode === "acceptance" },
   server: {
     host: '127.0.0.1',
     fs: {
@@ -27,4 +28,4 @@ export default defineConfig({
     },
   },
   preview: { host: '127.0.0.1' },
-});
+}));
