@@ -11,7 +11,7 @@ import path from 'node:path';
 import { setTimeout as sleep } from 'node:timers/promises';
 import { fileURLToPath } from 'node:url';
 import { stripVTControlCharacters } from 'node:util';
-import { checkMvp, waitMvpRendered } from './browser_mvp_checks.mjs';
+import { checkInitError, checkPublicUi, checkRenderError, checkMvp, waitMvpRendered } from './browser_mvp_checks.mjs';
 
 const ROOT = fileURLToPath(new URL('../', import.meta.url));
 const require = createRequire(import.meta.url);
@@ -32,7 +32,10 @@ const TERRAIN_FAULT = 'terrain-metadata-503';
 const USAGE = `Usage: node scripts/browser_smoke.mjs <dev|preview> [--stage <base|map|cells|mvp>]
 
 Also accepts --stage=mvp or stage=mvp. The default stage is base (historical).
-For the current app use mvp. Its default suite checks all 11 years.
+For the current app use mvp. Default: normal build, public UI only.
+BROWSER_ACCEPTANCE=1 selects explicit acceptance mode (preview requires npm run build:acceptance).
+Only acceptance builds expose inspection hooks; never deploy dist-acceptance.
+The acceptance default suite checks all 11 years.
 MVP_SUITE=controls checks controls; MVP_FOCUS=all|station-coast|slope|low-population|zero checks one camera/picking view.
 MVP_YEARS=2050 limits numeric checks for focus/control runs; omit it for all 11 years.
 MVP_FAULT=population|terrain|buildings|border checks one initial 503 and real independent retry.
@@ -111,6 +114,8 @@ function withinDirectory(parent, child) {
 }
 
 async function main({ mode, stage }) {
+  const acceptance = process.env.BROWSER_ACCEPTANCE === '1';
+  if (stage === 'mvp' && !acceptance && (process.env.MVP_FAULT || process.env.MVP_FOCUS || process.env.MVP_SUITE || process.env.MVP_YEARS)) throw new Error('Detailed MVP checks require BROWSER_ACCEPTANCE=1 and an acceptance build.');
   const checkTerrainFailure = process.env.CHECK_TERRAIN_FAILURE === '1';
   if (process.env.MVP_FOCUS && !['all', 'station-coast', 'slope', 'low-population', 'zero'].includes(process.env.MVP_FOCUS)) throw new Error('Invalid MVP_FOCUS');
   if (process.env.MVP_SUITE && !['years', 'controls', 'focus'].includes(process.env.MVP_SUITE)) throw new Error('Invalid MVP_SUITE');
@@ -133,7 +138,7 @@ async function main({ mode, stage }) {
   const port = mode === 'dev' ? 5173 : 4173;
   const origin = `http://127.0.0.1:${port}`;
   const suffix = `${process.env.MVP_YEARS ? `-${process.env.MVP_YEARS.replaceAll(',', '-')}` : ''}${process.env.MVP_FOCUS ? `-${process.env.MVP_FOCUS}` : ''}${process.env.MVP_SUITE === 'controls' ? '-controls' : ''}`;
-  const stem = `browser-${stage}-${mode}${mvpFault ? `-fault-${mvpFault}` : ''}${suffix}`;
+  const stem = `browser-security-${acceptance ? 'acceptance' : 'production'}-${stage}-${mode}${mvpFault ? `-fault-${mvpFault}` : ''}${suffix}`;
   const mvpFaultUrl = mvpFault === 'terrain' ? TERRAIN_METADATA_URL : mvpFault === 'buildings' ? manifest.sources.buildings.url : `${origin}/data/miyako-${mvpFault}.geojson`;
   const artifactDirectory = path.join(ROOT, 'artifacts');
   const jsonPath = path.join(artifactDirectory, `${stem}.json`);
@@ -145,6 +150,7 @@ async function main({ mode, stage }) {
     '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome');
   const vitePath = path.join(ROOT, 'node_modules/vite/bin/vite.js');
   const viteArgs = [vitePath, ...(mode === 'preview' ? ['preview'] : []),
+    ...(acceptance ? ['--mode', 'acceptance'] : []),
     '--host', '127.0.0.1', '--port', String(port), '--strictPort'];
   const relativePath = (filename) => path.relative(ROOT, filename);
   const elapsed = () => Date.now() - started;
@@ -171,7 +177,8 @@ async function main({ mode, stage }) {
     runTimeoutMs: RUN_TIMEOUT_MS,
     cleanupTimeoutMs: CLEANUP_TIMEOUT_MS,
     timedOut: false,
-    scope: stage === 'mvp' ? 'All 692 cells; suite/years/focus/fault selected by MVP_* environment. Inspect checks for exact coverage. Not an exhaustive 410-tile validation.' : 'Historical base/map/three-cell smoke.',
+    acceptance,
+    scope: !acceptance ? 'Normal build: public UI checks, no inspection hooks.' : stage === 'mvp' ? 'All 692 cells; suite/years/focus/fault selected by MVP_* environment. Inspect checks for exact coverage. Not an exhaustive 410-tile validation.' : 'Historical base/map/three-cell smoke.',
     environment: {
       platform: os.platform(),
       osRelease: os.release(),
@@ -883,7 +890,7 @@ async function main({ mode, stage }) {
       innerHeight: innerHeight,
     }));
     await sleep(SETTLE_MS, undefined, { signal });
-    if (stage === 'mvp') {
+    if (stage === 'mvp' && acceptance) {
       report.visibility = await page.evaluate(() => ({
         sources: Array.from({ length: window.__mvp.viewer.dataSources.length }, (_, i) => {
           const source = window.__mvp.viewer.dataSources.get(i);
@@ -899,7 +906,15 @@ async function main({ mode, stage }) {
     await page.screenshot({ path: screenshotPath, fullPage: false, animations: 'disabled', timeout: remaining(30_000) });
     report.screenshots.main = relativePath(screenshotPath);
     await checkStaticAssets();
-    if (stage === 'mvp' && !mvpFault) await checkMvp({ page, report, root: ROOT, artifactDirectory, remaining, requests: report.requests });
+    if (stage === 'mvp' && !mvpFault) {
+      if (acceptance) {
+        await checkMvp({ page, report, root: ROOT, artifactDirectory, remaining, requests: report.requests });
+        await checkRenderError(page, report, remaining);
+      } else {
+        await checkPublicUi({ page, report, root: ROOT, remaining });
+        await checkInitError(page, report, remaining);
+      }
+    }
     if (stage === 'cells') {
       const cells = page.locator('[data-testid="sample-cell"]');
       const measurements = await cells.evaluateAll((elements) => elements.map((element) => ({

@@ -1,6 +1,63 @@
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 
+export async function checkPublicUi({ page, report, root, remaining }) {
+  const ensure = (ok, message) => { if (!ok) throw new Error(message); };
+  ensure(await page.evaluate(() => !('__mvp' in window) && !('__mvpViewer' in window)), 'Production exposes acceptance hooks with ?acceptance=1');
+  const source = JSON.parse(await readFile(path.join(root, 'public/data/miyako-population.geojson'), 'utf8'));
+  ensure((await page.getByTestId('population-status').innerText()).includes('692セルを表示'), 'Real map population not ready');
+  ensure(await page.locator('#population-year').inputValue() === '2050', 'Initial year');
+  const results = [];
+  for (const year of [2020, 2070]) {
+    await page.locator('#population-year').fill(String(year), { timeout: remaining() });
+    for (const id of ['594137654', '594115541']) {
+      await page.locator('#mesh-select').selectOption(id, { timeout: remaining() });
+      const value = source.features.find((f) => f.id === id).properties.population[year];
+      const formatted = value === 0 ? '0人' : value < 0.1 ? '0.1人未満' : `${new Intl.NumberFormat('ja-JP', { minimumFractionDigits: 1, maximumFractionDigits: 1 }).format(value)}人`;
+      const row = page.getByTestId('mesh-details').locator('dl > div').filter({ has: page.getByText(`${year}年 人口`, { exact: true }) });
+      await row.getByText(formatted, { exact: true }).waitFor({ timeout: remaining() });
+      results.push({ year, id, population: value });
+    }
+  }
+  await page.getByRole('button', { name: '選択メッシュへ', exact: true }).click({ timeout: remaining() });
+  await page.waitForTimeout(1500);
+  ensure(await page.evaluate(() => !('__mvp' in window) && !('__mvpViewer' in window)), 'Production hooks appeared after interaction');
+  const excluded = JSON.parse(await readFile(path.join(root, 'scripts/cesium-excluded-assets.json'), 'utf8'));
+    const excludedRequests = report.requests.filter(({ url }) => excluded.some((file) => new URL(url).pathname === `/cesium/${file}`));
+    ensure(excludedRequests.length === 0, 'App requested an excluded Cesium image');
+    ensure(!report.console.some(({ type }) => type === 'error') && report.pageerrors.length === 0, 'Errors during production map interaction');
+    ensure(await page.getByRole('alert').count() === 0, 'Map displays an error alert');
+    report.checks.push({ name: '31-excluded-images-not-requested-no-console-page-or-ui-errors', passed: true });
+    report.publicUi = results;
+  report.checks.push({ name: 'production-query-cannot-enable-hooks-real-map-year-and-mesh-selection', passed: true });
+}
+
+export async function checkInitError(page, report, remaining) {
+  const message = '<img src=x onerror="window.__securityExecuted=1">';
+  await page.addInitScript((message) => {
+    HTMLCanvasElement.prototype.getContext = () => { throw new Error(message); };
+  }, message);
+  await page.reload({ waitUntil: 'domcontentloaded', timeout: remaining() });
+  const alert = page.getByRole('alert').filter({ hasText: 'Viewerの初期化失敗:' });
+  await alert.waitFor({ timeout: remaining() });
+  if (!(await alert.textContent()).includes(message) || !(await alert.innerHTML()).includes('&lt;img') || await alert.locator('img').count() || await page.locator('.cesium-widget-errorPanel').count() || await page.evaluate(() => window.__securityExecuted || '__mvp' in window || '__mvpViewer' in window)) throw new Error('Production initialization error did not remain safe text');
+  report.checks.push({ name: 'production-real-initialization-failure-escaped-no-panel-no-hooks', passed: true });
+}
+
+export async function checkRenderError(page, report, remaining) {
+  const message = '<img src=x onerror="window.__securityExecuted=1"><svg onload="window.__securityExecuted=1">';
+  await page.evaluate((message) => {
+    const viewer = window.__mvpViewer;
+    if (viewer.cesiumWidget._showRenderLoopErrors !== false) throw new Error('Unsafe Cesium panel enabled');
+    viewer.scene.renderError.raiseEvent(viewer.scene, new Error(message));
+  }, message);
+  const alert = page.getByRole('alert').filter({ hasText: '描画エラー:' });
+  await alert.waitFor({ timeout: remaining() });
+  if (!(await alert.textContent()).includes(message) || await alert.locator('img,svg').count() || await page.locator('.cesium-widget-errorPanel').count() || await page.evaluate(() => window.__securityExecuted)) throw new Error('Render error was not retained as harmless text');
+  if (!(await alert.innerHTML()).includes('&lt;img')) throw new Error('Error markup was not escaped');
+  report.checks.push({ name: 'real-scene-renderError-malicious-markup-escaped-no-panel-no-execution', passed: true });
+}
+
 export async function waitMvpRendered(page, remaining) {
   // First submit the new camera/property state: pre-frame tilesLoaded can describe the OLD view.
   await page.evaluate(() => new Promise((resolve) => {
@@ -122,7 +179,7 @@ export async function checkMvp({ page, report, root, artifactDirectory, remainin
   if (suite === 'controls') return;
   const take = async (name) => {
     await waitMvpRendered(page, remaining);
-    const filename = path.join(artifactDirectory, `browser-mvp-${report.mode}-${name}.png`);
+    const filename = path.join(artifactDirectory, `browser-security-acceptance-mvp-${report.mode}-${name}.png`);
     await page.screenshot({ path: filename, timeout: remaining(30000) });
     report.mvp.screenshots.push(path.relative(root, filename));
   };
