@@ -68,7 +68,7 @@ export function YearControl({ year, onChange }: { year: Year; onChange: (year: Y
     : year === LAST_YEAR ? '2020年から再生' : '再生';
   return <section className="year-control" aria-label="対象年">
     <div className="year-control-heading">
-      <label htmlFor="population-year">対象年 <strong data-testid="year-label">{year}年</strong> <span>{year === 2020 ? '調整済み基準人口' : '将来推計'}</span></label>
+      <label htmlFor="population-year">対象年 <strong data-testid="year-label">{year}年</strong></label>
       <div className="playback-controls">
         <button
           type="button"
@@ -91,7 +91,7 @@ export function YearControl({ year, onChange }: { year: Year; onChange: (year: Y
             }
           }}
         >{playbackLabel}</button>
-        <span className="playback-status" data-testid="playback-status" role="status" aria-live="polite">{playbackState}</span>
+        <span className="visually-hidden" data-testid="playback-status" role="status" aria-live="polite">{playbackState}</span>
       </div>
     </div>
     <input id="population-year" type="range" min="2020" max="2070" step="5" value={year} aria-valuetext={`${year}年`} onChange={(event) => {

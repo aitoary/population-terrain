@@ -1,6 +1,5 @@
 import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { loadPopulation } from './data/loadPopulation';
-import { changeRate, formatChangeRate, formatPopulation } from './domain/population';
 import { readSharedView, resolveSharedMesh, sharedViewUrl } from './domain/shareLink';
 import type { PopulationDataset } from './domain/types';
 import { YearControl } from './components/YearControl';
@@ -65,13 +64,9 @@ export default function App() {
     const url = sharedViewUrl(window.location.href, { year, meshId: selectedId });
     if (url !== window.location.href) window.history.replaceState(window.history.state, '', url);
   }, [data, year, selectedId]);
-  const total = data?.metadata.totals[year] ?? null;
-  const baseline = data?.metadata.totals[2020] ?? null;
-  const missing = data?.metadata.nullCounts[year] ?? 0;
   return <div className="app-shell">
     <header className="app-header">
       <div><p className="eyebrow">MIYAKO · POPULATION TERRAIN</p><h1>宮古市の人口変化</h1></div>
-      <div className="totals" data-testid="totals" data-year={year} data-total={total ?? 'null'}><strong>{year}年 · 対象メッシュの合計</strong><span>{formatPopulation(total)}{missing > 0 ? `（欠損${missing}件を除く）` : ''}</span><small>2020年比 {formatChangeRate(changeRate(baseline, total))} · 全692メッシュ</small></div>
     </header>
     <YearControl year={year} onChange={(next) => setView((previous) => ({ ...previous, year: next }))} />
     <main className="map-shell has-panel">
@@ -80,7 +75,7 @@ export default function App() {
         <Legend populationVisible={layers.population} />
       </div>
       <aside ref={panelRef} className="inspection-panel" aria-label="人口の詳細と表示設定">
-        <div data-testid="data-status" data-state={error ? 'error' : data ? 'ready' : 'loading'} aria-live="polite">{error ? <p role="alert">人口の取得・検査失敗: {error}<button onClick={() => setAttempt((n) => n + 1)}>人口を再試行</button></p> : data ? null : <p>人口の11年分を読み込み中…</p>}</div>
+        <div data-testid="data-status" data-state={error ? 'error' : data ? 'ready' : 'loading'} aria-live="polite">{error ? <p role="alert">人口の取得・検査失敗: {error}<button onClick={() => setAttempt((n) => n + 1)}>人口を再試行</button></p> : data ? null : <p>人口データを読み込み中…</p>}</div>
         <MeshDetails headingRef={detailsHeadingRef} features={data?.collection.features ?? EMPTY_FEATURES} selectedId={selectedId} year={year} onSelect={(meshId) => setView((previous) => ({ ...previous, meshId }))} />
         <FeaturedLocations data={data} selectedId={selectedId} onSelect={selectFeaturedLocation} />
         <LayerControls layers={layers} opacity={opacity} onVisibility={(key, visible) => setLayers((previous) => ({ ...previous, [key]: visible }))} onOpacity={setOpacity} />

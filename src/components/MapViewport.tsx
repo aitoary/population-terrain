@@ -37,8 +37,6 @@ export default function MapViewport({ data, year, selectedId, selectionFocusRequ
   const [borderAttempt, setBorderAttempt] = useState(0);
   const [mapAttempt, setMapAttempt] = useState(0);
   const [mapError, setMapError] = useState<string | null>(null);
-  // Leave more of a narrow map visible; the native disclosure remains user-controlled.
-  const [initialStatusOpen] = useState(() => !window.matchMedia('(max-width: 760px)').matches);
   const applyCurrent = useEffectEvent(() => {
     const layer = populationRef.current;
     layer?.setYear(year); layer?.setOpacity(opacity); layer?.setVisible(layers.population); layer?.setSelectedMesh(selectedId);
@@ -199,14 +197,19 @@ export default function MapViewport({ data, year, selectedId, selectionFocusRequ
         <button disabled={!ready || !data} onClick={() => focus('all')}>対象メッシュ全体</button>
         <button disabled={!ready || populationRef.current?.rows.find((row) => row.feature.id === selectedId)?.terrain?.status !== 'ready'} onClick={() => focus('selection')}>選択メッシュへ</button>
       </nav>
-      <details className="map-status" open={initialStatusOpen}><summary>地図の読込状態</summary><ul className="load-states" aria-live="polite">
+      <div className="map-status" hidden={[buildings, terrain, geometryState, border].every((state) => state.status === 'ready')}><ul className="load-states" aria-live="polite">
         {([
           ['buildings', '建物 · 2025年度 LOD1', buildings, () => controls.current?.buildings.retry()],
           ['terrain', '地形 · 楕円体高', terrain, () => controls.current?.terrain.retry()],
           ['population', '人口の立体表示', geometryState, () => setHeightAttempt((n) => n + 1)],
           ['border', '市境', border, () => setBorderAttempt((n) => n + 1)],
-        ] as const).map(([key, label, state, retry]) => <li key={key} data-testid={`${key}-status`} data-state={state.status}><strong>{label}</strong><span>{state.message}</span>{state.status === 'error' && (key !== 'population' || provider) && <button onClick={retry}>{key === 'population' ? '高さ取得' : label.split(' · ')[0]}を再試行</button>}</li>)}
-      </ul></details>
+        ] as const).map(([key, label, state, retry]) => <li key={key} hidden={state.status === 'ready'} data-testid={`${key}-status`} data-state={state.status}>
+          {state.status !== 'ready' && <>
+            <strong>{label}</strong><span>{state.message}</span>
+            {state.status === 'error' && (key !== 'population' || provider) && <button onClick={retry}>{key === 'population' ? '高さ取得' : label.split(' · ')[0]}を再試行</button>}
+          </>}
+        </li>)}
+      </ul></div>
       {mapError && <div role="alert" className="error-message">{mapError}<button onClick={() => setMapAttempt((n) => n + 1)}>地図を再初期化</button></div>}
     </div>
   </>;

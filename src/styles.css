@@ -7,7 +7,7 @@ button:disabled { cursor: wait; }
 button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, summary:focus-visible, #mesh-heading:focus { outline: 3px solid #c07720; outline-offset: 3px; }
 a { color: #125d70; text-underline-offset: 3px; }
 .app-shell { height: 100dvh; min-height: 680px; display: grid; grid-template-rows: auto auto minmax(0, 1fr) auto; }
-.app-header { padding: 16px 24px; display: flex; justify-content: space-between; align-items: center; background: #fff; border-bottom: 1px solid #ccd6da; }
+.app-header { padding: 8px 24px; display: flex; align-items: center; background: #fff; }
 h1 { margin: 3px 0 0; font-size: 24px; font-weight: 650; letter-spacing: .04em; }
 .eyebrow { margin: 0; font-size: 10px; letter-spacing: .18em; color: #56717d; }
 .stage-label { background: #e6f0ed; color: #285e4f; border-radius: 4px; padding: 6px 10px; font-size: 12px; }
@@ -21,7 +21,7 @@ h2 { font-size: 18px; margin: 0 0 8px; }
 .load-states { padding: 0; margin: 20px 0; list-style: none; }
 .load-states li { display: grid; gap: 6px; padding: 12px 0; border-top: 1px solid #d9e1e4; }
 .load-states strong { font-size: 11px; letter-spacing: .06em; }
-.load-states [data-state='ready'] span { color: #26624d; }
+.load-states li[hidden] { display: none; }
 .load-states [data-state='error'], .error-message { color: #a82929; overflow-wrap: anywhere; }
 .inspection-panel button { border: 1px solid #acc2c9; border-radius: 4px; background: #fff; padding: 7px 10px; color: #1b5262; text-align: left; }
 .note { color: #526873; font-size: 12px; line-height: 1.8; }
@@ -38,25 +38,21 @@ h2 { font-size: 18px; margin: 0 0 8px; }
 .sample-cell button { width: 100%; font-size: 12px; }
 .source-notes { margin: 16px 0; font-size: 12px; line-height: 1.8; }
 .source-notes summary { cursor: pointer; font-weight: 600; }
-.totals { display: grid; gap: 3px; text-align: right; font-variant-numeric: tabular-nums; }
-.totals span { font-size: 22px; font-weight: 650; }
-.totals small { color: #526873; }
-.year-control { background: #fff; padding: 10px 24px 14px; border-bottom: 1px solid #ccd6da; }
-.year-control-heading { display: flex; align-items: center; justify-content: space-between; gap: 20px; }
+.year-control { background: #fff; padding: 0 24px 8px; border-bottom: 1px solid #ccd6da; }
+.year-control-heading { display: flex; align-items: center; gap: 16px; }
 .year-control label { display: flex; gap: 12px; align-items: baseline; font-size: 13px; }
 .year-control strong { font-size: 21px; }
-.year-control input { width: 100%; accent-color: #125d70; }
+.year-control input { display: block; width: 100%; height: 28px; margin: 0; accent-color: #125d70; }
 .playback-controls { display: flex; align-items: center; gap: 9px; flex: 0 0 auto; }
-.playback-button { min-width: 80px; }
-.playback-status { min-width: 92px; color: #526873; font-size: 12px; }
+.playback-button { min-width: 80px; min-height: 44px; }
 .year-ticks { display: flex; justify-content: space-between; font-size: 11px; color: #526873; }
 .map-tools { position: relative; grid-row: 1; align-self: start; display: flex; flex-direction: column; width: max-content; max-width: 100%; min-height: 0; max-height: 100%; pointer-events: none; font-size: 11px; }
 .map-tools > * { pointer-events: auto; }
 .camera-controls { display: flex; gap: 6px; flex-shrink: 0; }
+.camera-controls button { min-height: 44px; }
 button { border: 1px solid #acc2c9; border-radius: 4px; background: #fff; padding: 7px 10px; color: #1b5262; }
 button:disabled { opacity: .55; cursor: not-allowed; }
 .map-status { margin-top: 8px; padding: 9px 12px; width: 265px; max-width: 100%; min-height: 36px; border-radius: 5px; background: #ffffffed; max-height: 270px; overflow: auto; overscroll-behavior: contain; }
-.map-status summary { cursor: pointer; }
 .map-status .load-states { margin: 5px 0 0; }
 .map-status .load-states li { padding: 6px 0; gap: 3px; }
 .mesh-details label { display: block; font-size: 11px; margin: 10px 0 6px; }
@@ -131,9 +127,8 @@ button:disabled { opacity: .55; cursor: not-allowed; }
   .legend { padding: 8px; }
   .legend ul { column-gap: 6px; }
   .app-shell { height: auto; min-height: 100dvh; grid-template-columns: minmax(0, 1fr); grid-template-rows: auto auto auto auto; }
-  .app-header { padding: 16px; flex-wrap: wrap; gap: 12px; }
-  .totals { text-align: left; }
-  .year-control { padding: 10px 16px 14px; }
+  .app-header { padding: 10px 16px 6px; }
+  .year-control { padding: 0 16px 8px; }
   .year-control-heading { flex-wrap: wrap; gap: 8px; }
   .year-ticks span:nth-child(even) { display: none; }
   .map-shell { display: grid; grid-template-rows: minmax(480px, 60svh) auto; }
