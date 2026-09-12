@@ -73,7 +73,9 @@ describe('selected mesh population trend', () => {
     expect(html).toContain('role="img" aria-labelledby=');
     expect(html).toContain('aria-describedby=');
     expect(html).toContain('横軸は年、縦軸は人口（人）');
-    expect(html).toContain('<summary>年別の人口を表示（11時点）</summary>');
+    expect(html).toContain('<caption>年別人口</caption>');
+    expect(html).not.toContain('<details');
+    expect(html).not.toContain('傾向を見る補助図');
     expect(html.match(/scope="row"/g)).toHaveLength(11);
   });
 });

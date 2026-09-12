@@ -33,8 +33,22 @@ describe('T09/T10 props-only accessible UI', () => {
     expect(html).not.toContain('disabled=""');
     expect(html).toContain('aria-pressed="false"');
   });
-  it.each([[100, 0, '0人（平面）'], [0, 50, '算出不可（基準人口0）'], [100, null, 'データなし'], [100, 0.01, '0.1人未満']] as const)('labels baseline %s / future %s honestly', (baseline, value, text) => {
-    expect(renderToStaticMarkup(<MeshDetails features={[feature(baseline, value)]} selectedId="test" year={2050} onSelect={() => {}} />)).toContain(text);
+  it.each([[100, 0, '0人'], [0, 50, '算出不可（基準人口0）'], [100, null, 'データなし'], [null, 50, '算出不可'], [100, 0.01, '0.1人未満']] as const)('labels baseline %s / future %s honestly in the summary', (baseline, value, text) => {
+    const html = renderToStaticMarkup(<MeshDetails features={[feature(baseline, value)]} selectedId="test" year={2050} onSelect={() => {}} />);
+    expect(html.split('<details')[0]).toContain(text);
+  });
+  it('keeps only the unnamed place, current population, rate, note and one share button in the summary', () => {
+    const html = renderToStaticMarkup(<MeshDetails features={[feature(100, 25)]} selectedId="test" year={2070} onSelect={() => {}} />);
+    const [summary, more] = html.split('<details');
+    expect(summary).toContain('>選択地点</h2>');
+    expect(summary!.match(/<dt>/g)).toHaveLength(2);
+    expect(summary).toContain('500mメッシュ全体の人口。将来値は推計です。');
+    expect(summary).toContain('この表示をコピー');
+    for (const text of ['基準人口', '増減人数', 'mesh-select', 'population-trend', '減少（']) expect(summary).not.toContain(text);
+    for (const text of ['詳しく見る', '基準人口', '増減人数', 'mesh-select', 'population-trend', '年別人口']) expect(more).toContain(text);
+    expect(more).not.toContain('この表示をコピー');
+    expect(html.match(/<details/g)).toHaveLength(1);
+    expect(html).not.toContain('open=""');
   });
   it('only shows the trend after the selected mesh is available', () => {
     const pending = renderToStaticMarkup(<MeshDetails features={[]} selectedId="test" year={2050} onSelect={() => {}} />);
@@ -47,6 +61,8 @@ describe('T09/T10 props-only accessible UI', () => {
   it('renders independent visibility and opacity controls', () => {
     const html = renderToStaticMarkup(<LayerControls layers={{ population: true, border: false, buildings: true }} opacity={0.25} onVisibility={() => {}} onOpacity={() => {}} />);
     expect(html.match(/type="checkbox"/g)).toHaveLength(3); expect(html).toContain('min="0.1"'); expect(html).toContain('max="0.8"');
+    expect(html).toContain('<details class="display-settings"><summary>表示設定</summary>');
+    expect(html).not.toContain('open=""');
   });
   it('keeps sharing unavailable until population data is validated', () => {
     const loading = renderToStaticMarkup(<ShareLink disabled />);
@@ -60,7 +76,7 @@ describe('T09/T10 props-only accessible UI', () => {
     const html = renderToStaticMarkup(<><Legend /><DataNotes /><Attribution /></>);
     for (const text of ['0.5m/人', '75%', '2055', '1km', '2025年度', '692', 'CC BY 4.0', '地理院タイル', '整備範囲外', 'PTN']) expect(html).toContain(text);
   });
-  it('keeps all renderer categories and the basic reading visible outside the closed explanation', () => {
+  it('keeps renderer categories on the map and consolidates explanations in data notes', () => {
     const html = renderToStaticMarkup(<Legend />);
     const basic = html.split('<details')[0]!;
     for (const [category, style] of Object.entries(CHANGE_STYLES)) {
@@ -70,10 +86,13 @@ describe('T09/T10 props-only accessible UI', () => {
     }
     expect(basic.match(/class="swatch"/g)).toHaveLength(7);
     for (const text of ['色：2020年からの人口増減率', '柱の高さ：表示年の人口', '白枠：選択中']) expect(basic).toContain(text);
-    expect(html).toContain('詳しい読み方');
-    expect(html).toContain(`${METERS_PER_PERSON}m/人`);
-    expect(html).toContain('欠損も柱を立てず');
-    expect(html).not.toContain('open=""');
+    expect(html).not.toContain('<details');
+    const notes = renderToStaticMarkup(<DataNotes />);
+    expect(notes).toContain('<summary>データについて</summary>');
+    expect(notes).toContain(`${METERS_PER_PERSON}m/人`);
+    expect(notes).toContain('欠損も柱を立てず');
+    expect(notes).toContain('丸め前の値');
+    expect(notes).not.toContain('open=""');
     expect(basic).not.toContain('m/人');
     expect(html).not.toContain('人口レイヤーは非表示です');
     expect(renderToStaticMarkup(<Legend populationVisible={false} />)).toContain('role="status">人口レイヤーは非表示です');

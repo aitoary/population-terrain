@@ -37,17 +37,20 @@ export default function App() {
     if (!panel || !heading) return;
     // Keep keyboard focus at the newly revealed content, without implicit page scrolling.
     heading.focus({ preventScroll: true });
+    const summary = panel.querySelector('.mesh-summary');
+    const bounds = (summary ?? heading).getBoundingClientRect();
     const panelStyle = window.getComputedStyle(panel);
     if (panelStyle.overflowY === 'auto') {
-      const headingTop = heading.getBoundingClientRect().top;
-      const chart = panel.querySelector('.population-trend svg');
-      const readingHeight = chart ? chart.getBoundingClientRect().bottom - headingTop : 0;
-      // Use the available top padding to fit the chart on shorter desktop panels.
-      const inset = Math.min(parseFloat(panelStyle.paddingTop), Math.max(8, panel.clientHeight - readingHeight - 4));
-      panel.scrollTo({ top: panel.scrollTop + headingTop - panel.getBoundingClientRect().top - inset, behavior: 'instant' });
+      const panelBounds = panel.getBoundingClientRect();
+      const inset = parseFloat(panelStyle.paddingTop);
+      if (bounds.top < panelBounds.top + inset || bounds.bottom > panelBounds.bottom - inset) {
+        panel.scrollTo({ top: panel.scrollTop + bounds.top - panelBounds.top - inset, behavior: 'instant' });
+      }
     } else {
       // The mobile inspector is in document flow, so reveal it in that scroll context.
-      window.scrollTo({ top: window.scrollY + heading.getBoundingClientRect().top - 16, behavior: 'instant' });
+      if (bounds.top < 16 || bounds.bottom > window.innerHeight - 16) {
+        window.scrollTo({ top: window.scrollY + bounds.top - 16, behavior: 'instant' });
+      }
     }
   }
   useEffect(() => {
@@ -76,8 +79,8 @@ export default function App() {
       </div>
       <aside ref={panelRef} className="inspection-panel" aria-label="人口の詳細と表示設定">
         <div data-testid="data-status" data-state={error ? 'error' : data ? 'ready' : 'loading'} aria-live="polite">{error ? <p role="alert">人口の取得・検査失敗: {error}<button onClick={() => setAttempt((n) => n + 1)}>人口を再試行</button></p> : data ? null : <p>人口データを読み込み中…</p>}</div>
-        <MeshDetails headingRef={detailsHeadingRef} features={data?.collection.features ?? EMPTY_FEATURES} selectedId={selectedId} year={year} onSelect={(meshId) => setView((previous) => ({ ...previous, meshId }))} />
         <FeaturedLocations data={data} selectedId={selectedId} onSelect={selectFeaturedLocation} />
+        <MeshDetails headingRef={detailsHeadingRef} features={data?.collection.features ?? EMPTY_FEATURES} selectedId={selectedId} year={year} onSelect={(meshId) => setView((previous) => ({ ...previous, meshId }))} />
         <LayerControls layers={layers} opacity={opacity} onVisibility={(key, visible) => setLayers((previous) => ({ ...previous, [key]: visible }))} onOpacity={setOpacity} />
         <DataNotes />
       </aside>

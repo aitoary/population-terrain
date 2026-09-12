@@ -26,7 +26,6 @@ export function PopulationTrendChart({ population, year }: {
   }));
   const current = points[YEARS.indexOf(year)]!;
   const hasData = points.some((point) => point.value !== null);
-  const hasMissing = points.some((point) => point.value === null);
   let connected = false;
   const path = points.map((point) => {
     if (point.y === null) {
@@ -45,7 +44,7 @@ export function PopulationTrendChart({ population, year }: {
     </figcaption>
     <svg viewBox={`0 0 ${WIDTH} ${HEIGHT}`} role="img" aria-labelledby={`${id}-title`} aria-describedby={`${id}-description`}>
       <title id={`${id}-title`}>2020〜2070年の人口推移（5年刻み）</title>
-      <desc id={`${id}-description`}>横軸は年、縦軸は人口（人）。現在表示は{year}年、{formatPopulation(current.value)}。0人はゼロの位置に描き、データなしの年は線をつなぎません。全11時点の数値は下の「年別の人口を表示」で確認できます。</desc>
+      <desc id={`${id}-description`}>横軸は年、縦軸は人口（人）。現在表示は{year}年、{formatPopulation(current.value)}。0人はゼロの位置に描き、データなしの年は線をつなぎません。</desc>
       <g aria-hidden="true">
         <text x="0" y="13">人口（人）</text>
         {hasData ? [0, ceiling / 2, ceiling].map((value) => {
@@ -72,17 +71,15 @@ export function PopulationTrendChart({ population, year }: {
         />)}
       </g>
     </svg>
-    <p className="note population-trend-note">傾向を見る補助図です。現在年の数値は上の人口欄を参照。{hasMissing ? 'データなしの年は線をつなぎません。' : ''}</p>
-    <details className="population-trend-values">
-      <summary>年別の人口を表示（11時点）</summary>
+    <div className="population-trend-values">
       <table>
-        <caption className="visually-hidden">選択メッシュの人口（2020〜2070年・5年刻み）</caption>
+        <caption>年別人口</caption>
         <thead><tr><th scope="col">年</th><th scope="col">人口</th></tr></thead>
         <tbody>{points.map((point) => <tr key={point.year} aria-current={point.year === year ? 'true' : undefined}>
           <th scope="row">{point.year}年{point.year === year ? '（表示中）' : ''}</th>
           <td>{formatPopulation(point.value)}</td>
         </tr>)}</tbody>
       </table>
-    </details>
+    </div>
   </figure>;
 }

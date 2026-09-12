@@ -5,6 +5,7 @@ import { FEATURED_LOCATIONS } from '../config/featuredLocations';
 import { parseMetadata, parsePopulation, validateDataset } from '../data/loadPopulation';
 import { changeRate, formatChangeRate, formatPopulation } from '../domain/population';
 import { FeaturedLocations } from './FeaturedLocations';
+import { MeshDetails } from './MeshDetails';
 
 const data = validateDataset(
   parsePopulation(JSON.parse(readFileSync(new URL('../../public/data/miyako-population.geojson', import.meta.url), 'utf8'))),
@@ -24,24 +25,30 @@ describe('featured locations from the pinned PTN dataset', () => {
     expect(population[2070]).toBe(future);
     const rate = changeRate(baseline, future);
     const html = renderToStaticMarkup(<FeaturedLocations data={data} selectedId={meshId} onSelect={() => {}} />);
-    expect(html).toContain(`data-baseline="${baseline}" data-population="${future}" data-rate="${rate}"`);
-    expect(html).not.toContain(`${formatPopulation(baseline)} → ${formatPopulation(future)}`);
-    expect(html).toContain(formatChangeRate(rate));
+    expect(html).not.toContain('data-population');
+    expect(html).not.toContain(formatChangeRate(rate));
+    expect(html).toContain('>✓</span>');
     expect(html.match(/aria-pressed="true"/g)).toHaveLength(1);
+    const details = renderToStaticMarkup(<MeshDetails features={data.collection.features} selectedId={meshId} year={2070} onSelect={() => {}} />);
+    expect(details).toContain(`>${FEATURED_LOCATIONS.find((point) => point.meshId === meshId)!.name}</h2>`);
+    expect(details).toContain(`data-population="${future}" data-baseline="${baseline}" data-rate="${rate}"`);
+    expect(details).toContain(formatChangeRate(rate));
+    expect(details).toContain(formatPopulation(future));
   });
 
-  it('offers three compact choices with an introduction, descriptions and no duplicate sharing', () => {
+  it('offers only three place names without descriptions, numbers or duplicate sharing', () => {
     expect(new Set(FEATURED_LOCATIONS.map((point) => point.meshId)).size).toBe(3);
     const html = renderToStaticMarkup(<FeaturedLocations data={data} selectedId="594137654" onSelect={() => {}} />);
     expect(html.match(/data-testid="featured-location"/g)).toHaveLength(3);
     expect(html.match(/type="button"/g)).toHaveLength(3);
-    expect(html).toContain('見る場所に迷ったら');
-    expect(html).toContain('2070年・2020年比');
-    for (const { meshId, name, description } of FEATURED_LOCATIONS) {
+    expect(html).toContain('場所を選ぶ');
+    expect(html).not.toContain('見る場所に迷ったら');
+    for (const { name, description } of FEATURED_LOCATIONS) {
       expect(html).toContain(`aria-label="${name}を2070年で見る"`);
-      expect(html).toContain(`aria-describedby="featured-description-${meshId} featured-rate-${meshId}"`);
-      expect(html).toContain(description);
+      expect(html).toContain(`>${name}</span>`);
+      expect(html).not.toContain(description);
     }
+    expect(html).not.toContain('%');
     expect(html).not.toContain('コピー');
     expect(html).not.toContain('aria-pressed="true"');
     expect(html).not.toContain('disabled=""');
@@ -50,7 +57,7 @@ describe('featured locations from the pinned PTN dataset', () => {
   it('keeps the three choices disabled while population is unavailable', () => {
     const html = renderToStaticMarkup(<FeaturedLocations data={null} selectedId="594137654" onSelect={() => {}} />);
     expect(html.match(/disabled=""/g)).toHaveLength(3);
-    expect(html.match(/data-baseline="null"/g)).toHaveLength(3);
+    expect(html).not.toContain('data-baseline');
     expect(html).not.toContain('>0人');
   });
 });
