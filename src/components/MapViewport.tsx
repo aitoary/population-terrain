@@ -37,6 +37,8 @@ export default function MapViewport({ data, year, selectedId, selectionFocusRequ
   const [borderAttempt, setBorderAttempt] = useState(0);
   const [mapAttempt, setMapAttempt] = useState(0);
   const [mapError, setMapError] = useState<string | null>(null);
+  // Leave more of a narrow map visible; the native disclosure remains user-controlled.
+  const [initialStatusOpen] = useState(() => !window.matchMedia('(max-width: 760px)').matches);
   const applyCurrent = useEffectEvent(() => {
     const layer = populationRef.current;
     layer?.setYear(year); layer?.setOpacity(opacity); layer?.setVisible(layers.population); layer?.setSelectedMesh(selectedId);
@@ -53,10 +55,19 @@ export default function MapViewport({ data, year, selectedId, selectionFocusRequ
     let scene: ReturnType<typeof createViewer> | undefined;
     let connections: typeof controls.current = null;
     let removeRenderError: (() => void) | undefined;
+    let creditObserver: ResizeObserver | undefined;
     setMapError(null); setReady(false); setProvider(null);
     try {
       scene = createViewer(container, (message) => { if (active) setMapError(`背景地図の取得失敗: ${message}`); });
       sceneRef.current = scene;
+      // Credits wrap as the map narrows. Reserve their actual height for the overlay UI.
+      const credits = container.querySelector<HTMLElement>('.cesium-viewer-bottom');
+      if (credits) {
+        creditObserver = new ResizeObserver(() => {
+          container.parentElement?.style.setProperty('--map-credit-height', `${Math.ceil(credits.getBoundingClientRect().height) + 8}px`);
+        });
+        creditObserver.observe(credits);
+      }
       if (__ACCEPTANCE__ && new URLSearchParams(location.search).get('acceptance') === '1') Object.assign(window, { __mvpViewer: scene.viewer });
       removeRenderError = scene.viewer.scene.renderError.addEventListener((_scene, error) => { if (active) setMapError(`描画エラー: ${describeError(error)}`); });
       connections = {
@@ -72,6 +83,7 @@ export default function MapViewport({ data, year, selectedId, selectionFocusRequ
       samplerRef.current?.sampler.destroy(); samplerRef.current = null;
       connections?.terrain.destroy(); connections?.buildings.destroy();
       removeRenderError?.(); scene?.destroy();
+      creditObserver?.disconnect();
       // A throwing Cesium constructor can leave DOM without returning a Viewer to destroy.
       container.replaceChildren();
       if (__ACCEPTANCE__ && '__mvpViewer' in window) delete (window as Window & { __mvpViewer?: unknown }).__mvpViewer;
@@ -187,7 +199,7 @@ export default function MapViewport({ data, year, selectedId, selectionFocusRequ
         <button disabled={!ready || !data} onClick={() => focus('all')}>対象メッシュ全体</button>
         <button disabled={!ready || populationRef.current?.rows.find((row) => row.feature.id === selectedId)?.terrain?.status !== 'ready'} onClick={() => focus('selection')}>選択メッシュへ</button>
       </nav>
-      <details className="map-status" open><summary>地図の読込状態</summary><ul className="load-states" aria-live="polite">
+      <details className="map-status" open={initialStatusOpen}><summary>地図の読込状態</summary><ul className="load-states" aria-live="polite">
         {([
           ['buildings', '建物 · 2025年度 LOD1', buildings, () => controls.current?.buildings.retry()],
           ['terrain', '地形 · 楕円体高', terrain, () => controls.current?.terrain.retry()],

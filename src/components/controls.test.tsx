@@ -9,6 +9,7 @@ import { Attribution } from './Attribution';
 import { ShareLink } from './ShareLink';
 import type { MeshFeature } from '../domain/types';
 import { YEARS } from '../domain/types';
+import { CHANGE_STYLES, METERS_PER_PERSON } from '../domain/population';
 const feature = (baseline: number | null, value: number | null): MeshFeature => ({ type: 'Feature', id: 'test', geometry: { type: 'Polygon', coordinates: [[]] }, properties: { meshId: 'test', cityCode: '03202', population: { ...Object.fromEntries(YEARS.map((year) => [year, value])), 2020: baseline } as MeshFeature['properties']['population'] } });
 describe('T09/T10 props-only accessible UI', () => {
   it.each(YEARS)('renders only the five-year range at %s', (year) => {
@@ -55,5 +56,23 @@ describe('T09/T10 props-only accessible UI', () => {
   it('provides the coefficient, fixed categories, temporal caveats, licenses and credits', () => {
     const html = renderToStaticMarkup(<><Legend /><DataNotes /><Attribution /></>);
     for (const text of ['0.5m/人', '75%', '2055', '1km', '2025年度', '692', 'CC BY 4.0', '地理院タイル', '整備範囲外', 'PTN']) expect(html).toContain(text);
+  });
+  it('keeps all renderer categories and the basic reading visible outside the closed explanation', () => {
+    const html = renderToStaticMarkup(<Legend />);
+    const basic = html.split('<details')[0]!;
+    for (const [category, style] of Object.entries(CHANGE_STYLES)) {
+      expect(basic).toContain(`data-category="${category}"`);
+      expect(basic).toContain(`background-color:${style.color}`);
+      expect(basic).toContain(style.label);
+    }
+    expect(basic.match(/class="swatch"/g)).toHaveLength(7);
+    for (const text of ['色：2020年からの人口増減率', '柱の高さ：表示年の人口', '白枠：選択中']) expect(basic).toContain(text);
+    expect(html).toContain('詳しい読み方');
+    expect(html).toContain(`${METERS_PER_PERSON}m/人`);
+    expect(html).toContain('欠損も柱を立てず');
+    expect(html).not.toContain('open=""');
+    expect(basic).not.toContain('m/人');
+    expect(html).not.toContain('人口レイヤーは非表示です');
+    expect(renderToStaticMarkup(<Legend populationVisible={false} />)).toContain('role="status">人口レイヤーは非表示です');
   });
 });
