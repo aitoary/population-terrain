@@ -16,6 +16,8 @@ async function expectView(page, year, meshId) {
   const details = page.getByTestId('mesh-details');
   await expect(details).toHaveAttribute('data-year', String(year));
   await expect(details).toHaveAttribute('data-population', String(source.features.find((feature) => feature.id === meshId).properties.population[year]));
+  await expect(page.getByTestId('population-trend')).toHaveAttribute('data-year', String(year));
+  await expect(page.getByTestId('population-trend').locator('circle[data-current="true"]')).toHaveAttribute('data-year', String(year));
   await expect(page.getByTestId('totals')).toHaveAttribute('data-total', String(metadata.totals[year]));
   await expect(page).toHaveURL((url) => url.searchParams.get('year') === String(year) && url.searchParams.get('mesh') === meshId);
   await expect(copyButton(page)).toBeEnabled();

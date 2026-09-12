@@ -98,11 +98,13 @@ npm run build
 npm run test:browser -- preview --stage mvp
 npm run test:share # 通常本番でURL復元・実クリップボード・初期化再試行を検証
 npm run test:guide # 注目地点の選択・再生停止・地点別共有（別の300秒上限）
+npm run test:trend # 全11年のチャート追従・数値表・追加取得なし・320/390px幅
 SHARE_DEV=1 npm run test:share # devのStrictMode・非同期読込でも同じ検査
 npm run test:headers # 有限のローカル Workers Static Assets（Viteではない）
 
 # 詳細受入: 専用モードのみ。dist-acceptance は絶対にデプロイしない
 npm run build:acceptance
+TREND_ACCEPTANCE=1 npm run test:trend # 年変更中の実カメラ維持・選択メッシュへの移動・ズームも検証
 GUIDE_ACCEPTANCE=1 npm run test:guide # 注目地点の実カメラ・選択Entity・描画完了も検証
 BROWSER_ACCEPTANCE=1 npm run test:browser -- preview --stage mvp
 # 各操作は別の120秒上限実行に分割
@@ -118,6 +120,8 @@ npm run build
 Zed Agentのsandboxがlocalhost待受を拒否する場合、有限時間のブラウザーテストに対する実行許可が必要です。npmキャッシュが書込不可なら、`npm --cache .npm-cache ci` を使えます。グローバル設定や所有者の変更は不要です。
 
 共有リンクのPlaywrightテストは1 worker・全体300秒上限で、専用のローカルポート（preview: 4174 / dev: 5174）と一時Chromeプロファイルを使います。人口データは実ファイル、地形・建物・地図は実配信を使い、遅延・人口503・Clipboard API拒否/非対応・Canvas初期化失敗だけをテスト内で注入します。`artifacts/browser-share-links-{preview,dev}.json` と `artifacts/share-links-{preview,dev}/` に結果・スクリーンショットを出力します。
+
+チャートのブラウザーテストも1 worker・全体300秒上限で実ファイルを使います。結果と画像は `artifacts/browser-population-trend-{preview,acceptance}.json`、`artifacts/population-trend-{preview,acceptance}/` に出力します。実データにない全時点欠損・全時点0人・途中の欠損・孤立値はコンポーネントテストの合成値で確認します。
 
 `npm run data:verify` は既存の `data/raw/` の固定原本と公開出力を読むだけです。再取得や出力更新をせず、全7,612値・692形状・市境・metadataを照合します。通常起動には原本もPythonも不要です。
 

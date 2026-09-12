@@ -20,6 +20,8 @@ async function expectView(page, year, id) {
   await expect(page.getByTestId('mesh-details')).toHaveAttribute('data-year', String(year));
   await expect(page.getByTestId('mesh-details')).toHaveAttribute('data-population', String(values[year]));
   await expect(page.getByTestId('mesh-details')).toHaveAttribute('data-baseline', String(values[2020]));
+  await expect(page.getByTestId('population-trend')).toHaveAttribute('data-year', String(year));
+  await expect(page.getByTestId('population-trend').locator('circle[data-current="true"]')).toHaveAttribute('data-year', String(year));
   await expect(page.getByTestId('totals')).toHaveAttribute('data-total', String(metadata.totals[year]));
   await expect(page).toHaveURL((url) => url.searchParams.get('year') === String(year) && url.searchParams.get('mesh') === id);
 }

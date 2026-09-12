@@ -14,6 +14,7 @@
     "test:browser": "node scripts/browser_smoke.mjs",
     "test:share": "playwright test --config playwright.share.config.mjs",
     "test:guide": "playwright test --config playwright.guide.config.mjs",
+    "test:trend": "playwright test --config playwright.trend.config.mjs",
     "test:headers": "node scripts/check_headers.mjs",
     "data:acquire": "python3 scripts/acquire_data.py",
     "data:prepare": ".venv/bin/python scripts/prepare_population.py",
