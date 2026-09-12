@@ -5,8 +5,9 @@ export async function checkPublicUi({ page, report, root, remaining }) {
   const ensure = (ok, message) => { if (!ok) throw new Error(message); };
   ensure(await page.evaluate(() => !('__mvp' in window) && !('__mvpViewer' in window)), 'Production exposes acceptance hooks with ?acceptance=1');
   const source = JSON.parse(await readFile(path.join(root, 'public/data/miyako-population.geojson'), 'utf8'));
-  ensure((await page.getByTestId('population-status').innerText()).includes('692セルを表示'), 'Real map population not ready');
+  ensure(await page.getByTestId('population-status').getAttribute('data-state') === 'ready', 'Real map population not ready');
   ensure(await page.locator('#population-year').inputValue() === '2050', 'Initial year');
+  await page.locator('.mesh-more > summary').click({ timeout: remaining() });
   const results = [];
   for (const year of [2020, 2070]) {
     await page.locator('#population-year').fill(String(year), { timeout: remaining() });
@@ -86,6 +87,7 @@ export async function checkMvp({ page, report, root, artifactDirectory, remainin
   const ensure = (condition, message) => { if (!condition) throw new Error(message); };
   ensure(await page.locator('#mesh-select').inputValue() === '594137654', 'Initial station selection');
   ensure(await page.locator('#population-year').inputValue() === '2050', 'Initial year');
+  ensure(await page.getByTestId('totals').count() === 0, 'Global totals should not be displayed');
   report.mvp = { years: [], screenshots: [], geometryCount: 0 };
   await page.evaluate(() => {
     const { viewer, layer, bases } = window.__mvp;
@@ -128,8 +130,6 @@ export async function checkMvp({ page, report, root, artifactDirectory, remainin
       const rgb = [0, 2, 4].map((start) => parseInt(hex.slice(start, start + 2), 16) / 255);
       ensure(rgb.every((n, i) => Math.abs(n - cell.color[i]) < 1e-10), `Color ${cell.id}/${year}`);
     }
-    const total = source.features.reduce((sum, f) => sum + (f.properties.population[year] ?? 0), 0);
-    ensure(Math.abs(Number(await page.locator('[data-testid="totals"]').getAttribute('data-total')) - total) < 1e-7, `Total ${year}`);
     const station = source.features.find((f) => f.id === '594137654');
     ensure(Number(await page.locator('[data-testid="mesh-details"]').getAttribute('data-population')) === station.properties.population[year], `Details ${year}`);
     report.mvp.years.push({ year, cells: snapshot.cells.length, inputToGeometryReadyMs: performance.now() - started });
@@ -148,6 +148,7 @@ export async function checkMvp({ page, report, root, artifactDirectory, remainin
   report.mvp.performance.provisionalUiTargetMet = report.mvp.performance.maxTimerGapMs < 1000 && report.mvp.performance.maxLongTaskMs < 1000;
   ensure(report.mvp.performance.provisionalUiTargetMet, 'Provisional UI stall threshold exceeded (see performance metrics)');
   if (suite === 'years') return;
+  await page.locator('.mesh-more > summary').click({ timeout: remaining() });
   const zero = source.features.find((f) => f.properties.population[2070] === 0);
   if (!process.env.MVP_FOCUS) {
     await page.locator('#population-year').fill('2070');
@@ -157,8 +158,9 @@ export async function checkMvp({ page, report, root, artifactDirectory, remainin
     await page.keyboard.press('ArrowRight');
     await page.locator('#mesh-select').selectOption(zero.id);
     ensure(await page.locator('[data-testid="mesh-details"]').getAttribute('data-population') === '0', 'Real zero selection details');
-    ensure((await page.locator('[data-testid="mesh-details"]').innerText()).includes('0人（平面）'), 'Real zero label');
+    ensure(await page.locator('.mesh-summary .current-population').innerText() === '0人', 'Real zero label');
     report.mvp.zeroMeshId = zero.id;
+    await page.locator('.display-settings > summary').click({ timeout: remaining() });
     await page.locator('#population-opacity').fill('0.8');
     const positiveAlpha = await page.evaluate(() => window.__mvp.layer.source.entities.values.find((e) => e.properties.population.getValue() > 0).polygon.material.getValue().color.alpha);
     ensure(positiveAlpha === 0.8, 'Opacity update');

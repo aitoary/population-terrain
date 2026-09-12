@@ -3,7 +3,6 @@ import { test, expect } from '@playwright/test';
 import { waitMvpRendered } from './browser_mvp_checks.mjs';
 
 const source = JSON.parse(readFileSync(new URL('../public/data/miyako-population.geojson', import.meta.url), 'utf8'));
-const metadata = JSON.parse(readFileSync(new URL('../public/data/data-meta.json', import.meta.url), 'utf8'));
 const ids = ['594137744', '594147883', '594132791'];
 const acceptance = process.env.GUIDE_ACCEPTANCE === '1' && process.env.SHARE_DEV !== '1';
 const query = acceptance ? '&acceptance=1' : '';
@@ -22,7 +21,6 @@ async function expectView(page, year, id) {
   await expect(page.getByTestId('mesh-details')).toHaveAttribute('data-baseline', String(values[2020]));
   await expect(page.getByTestId('population-trend')).toHaveAttribute('data-year', String(year));
   await expect(page.getByTestId('population-trend').locator('circle[data-current="true"]')).toHaveAttribute('data-year', String(year));
-  await expect(page.getByTestId('totals')).toHaveAttribute('data-total', String(metadata.totals[year]));
   await expect(page).toHaveURL((url) => url.searchParams.get('year') === String(year) && url.searchParams.get('mesh') === id);
 }
 
@@ -74,7 +72,7 @@ test(`guides real mesh ${guideId}, stops playback and shares the destination`, a
   await page.goto(`/?year=2020&mesh=594115541&source=featured${query}#guide`);
   await expectView(page, 2020, '594115541');
   await expect(page.getByTestId('featured-location')).toHaveCount(3);
-  await expect(page.getByRole('region', { name: '注目地点', exact: true })).toContainText('見る場所に迷ったら');
+  await expect(page.getByRole('region', { name: '場所を選ぶ', exact: true }).getByRole('button')).toHaveCount(3);
   await expect(page.locator('#data-notes')).toContainText('建物なし・読込失敗は無人口を意味しません');
   await expectRealMap(page);
   const graphics = await page.evaluate(() => {
@@ -99,16 +97,16 @@ test(`guides real mesh ${guideId}, stops playback and shares the destination`, a
   for (const id of [guideId]) {
     const values = source.features.find((feature) => feature.id === id).properties.population;
     const rate = (values[2070] - values[2020]) / values[2020] * 100;
-    await expect(location(page, id)).toHaveAttribute('data-baseline', String(values[2020]));
-    await expect(location(page, id)).toHaveAttribute('data-population', String(values[2070]));
-    await expect(location(page, id)).toHaveAttribute('data-rate', String(rate));
-    await expect(location(page, id)).toContainText(`${rate.toFixed(1)}%`);
+    await expect(location(page, id)).not.toContainText('%');
     await page.locator('#population-year').fill('2020');
 
     await page.getByTestId('playback-toggle').click();
     await expect(page.getByTestId('playback-toggle')).toHaveAttribute('aria-pressed', 'true');
     await selectLocation(page, id).click();
     await expectView(page, 2070, id);
+    await expect(page.getByTestId('mesh-details')).toHaveAttribute('data-rate', String(rate));
+    await expect(page.locator('.mesh-summary')).toContainText(`${rate.toFixed(1)}%`);
+    await expect(page.locator('.mesh-more')).not.toHaveAttribute('open', '');
     await expect(selectLocation(page, id)).toHaveAttribute('aria-pressed', 'true');
     await expect(page.getByTestId('playback-status')).toHaveText('停止中（最終年）');
     await expect(page.getByTestId('playback-toggle')).toHaveAttribute('aria-pressed', 'false');
@@ -168,14 +166,13 @@ test(`guides real mesh ${guideId}, stops playback and shares the destination`, a
 }
 
 for (const width of [1440, 390, 320]) {
-  test(`puts mesh details first with three compact choices and one share action at ${width}px`, async ({ page }, testInfo) => {
+  test(`puts three compact choices before the summary and one share action at ${width}px`, async ({ page }, testInfo) => {
     await page.setViewportSize({ width, height: width === 1440 ? 1000 : 844 });
     await page.goto(`/?year=2050&mesh=594137654${query}`);
     await expectView(page, 2050, '594137654');
     const panel = page.getByRole('complementary', { name: '人口の詳細と表示設定' });
-    const details = page.getByTestId('mesh-details');
-    const featured = page.getByRole('region', { name: '注目地点', exact: true });
-    await expect(panel.locator('section').first()).toHaveAttribute('data-testid', 'mesh-details');
+    const featured = page.getByRole('region', { name: '場所を選ぶ', exact: true });
+    await expect(panel.locator('section').first()).toHaveAttribute('aria-labelledby', 'featured-heading');
     await expect(featured.getByRole('button')).toHaveCount(3);
     await expect(featured.getByRole('button', { pressed: true })).toHaveCount(0);
     await expect(page.getByRole('button', { name: /コピー/ })).toHaveCount(1);
@@ -187,27 +184,25 @@ for (const width of [1440, 390, 320]) {
         return { top, bottom, left, right, height };
       };
       return {
-        details: box('.mesh-details'), chart: box('.population-trend'), share: box('.share-link'),
-        featured: box('.featured-locations'), choices: box('.featured-list'), layers: box('.layer-controls'),
+        details: box('.mesh-details'), share: box('.share-link'),
+        featured: box('.featured-locations'), choices: box('.featured-list'), layers: box('.display-settings'),
         panelTop: element.getBoundingClientRect().top, panelBottom: element.getBoundingClientRect().bottom,
         pageOverflow: document.documentElement.scrollWidth - innerWidth,
       };
     });
-    expect(layout.details.top - layout.panelTop).toBeLessThanOrEqual(22);
-    expect(layout.chart.bottom).toBeLessThan(layout.share.top);
-    expect(layout.details.bottom).toBeLessThanOrEqual(layout.featured.top);
-    expect(layout.featured.bottom).toBeLessThanOrEqual(layout.layers.top);
-    expect(layout.choices.height).toBeLessThan(220);
-    expect(layout.featured.height).toBeLessThan(300);
+    expect(layout.featured.top - layout.panelTop).toBeLessThanOrEqual(22);
+    expect(layout.featured.bottom).toBeLessThanOrEqual(layout.details.top);
+    expect(layout.details.bottom).toBeLessThanOrEqual(layout.layers.top);
+    expect(layout.choices.height).toBe(44);
+    expect(layout.featured.height).toBeLessThan(80);
     expect(layout.pageOverflow).toBe(0);
     expect(layout.details.left).toBeGreaterThanOrEqual(0);
     expect(layout.details.right).toBeLessThanOrEqual(width);
-    if (width === 1440) expect(layout.chart.bottom).toBeLessThan(layout.panelBottom);
+    if (width === 1440) expect(layout.share.bottom).toBeLessThan(layout.panelBottom);
     for (const id of ids) {
       const choice = selectLocation(page, id);
-      const values = source.features.find((feature) => feature.id === id).properties.population;
-      const rate = (values[2070] - values[2020]) / values[2020] * 100;
-      await expect(choice).toHaveAccessibleDescription(new RegExp(`2070年の2020年比 ${rate.toFixed(1)}%`));
+      await expect(choice).toHaveAccessibleName(/を2070年で見る$/);
+      await expect(choice).not.toContainText('%');
       expect((await choice.boundingBox()).height).toBeGreaterThanOrEqual(44);
     }
     await testInfo.attach('panel-layout', { body: JSON.stringify(layout), contentType: 'application/json' });
@@ -219,6 +214,8 @@ for (const width of [1440, 390, 320]) {
     await page.keyboard.press('Enter');
     await expectView(page, 2070, ids[2]);
     await expect(featured.getByRole('button', { pressed: true })).toHaveCount(1);
+    await expect(page.locator('.mesh-more')).not.toHaveAttribute('open', '');
+    await page.locator('.mesh-more > summary').click();
     await page.locator('#mesh-select').selectOption('594137654');
     await expectView(page, 2070, '594137654');
     await expect(featured.getByRole('button', { pressed: true })).toHaveCount(0);

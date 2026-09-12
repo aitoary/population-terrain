@@ -30,6 +30,9 @@ test('keeps the series stable, follows all playback years, and exposes all value
   });
   await page.goto(`/?year=2050&mesh=${station}${query}`);
   await expect(page.getByTestId('data-status')).toHaveAttribute('data-state', 'ready');
+  await expect(page.getByTestId('population-trend')).not.toBeVisible();
+  await page.locator('.mesh-more > summary').focus();
+  await page.keyboard.press('Enter');
   await expectCurrent(page, 2050, station);
   const chart = page.getByTestId('population-trend');
   await expect(chart.getByRole('img')).toHaveAccessibleName('2020〜2070年の人口推移（5年刻み）');
@@ -37,8 +40,6 @@ test('keeps the series stable, follows all playback years, and exposes all value
   const initialPoints = await chart.locator('circle').evaluateAll((points) => points.map((point) => [point.getAttribute('cx'), point.getAttribute('cy')]));
   await page.getByTestId('mesh-details').screenshot({ path: testInfo.outputPath('trend-desktop.png') });
 
-  await chart.locator('summary').focus();
-  await page.keyboard.press('Enter');
   await expect(chart.getByRole('table')).toBeVisible();
   await expect(chart.locator('tbody tr')).toHaveCount(11);
   for (const [index, year] of years.entries()) {
@@ -47,7 +48,7 @@ test('keeps the series stable, follows all playback years, and exposes all value
     await expectCurrent(page, year, station);
     await expect(chart.locator('.population-trend-line')).toHaveAttribute('d', initialPath);
   }
-  await chart.locator('summary').click();
+  await expect(page.locator('.mesh-more')).toHaveAttribute('open', '');
 
   let cameraBefore;
   if (acceptance) {
@@ -108,11 +109,11 @@ for (const width of [390, 320]) {
     await page.setViewportSize({ width, height: 844 });
     await page.goto(`/?year=2070&mesh=${zero}${query}`);
     await expect(page.getByTestId('data-status')).toHaveAttribute('data-state', 'ready');
+    await page.locator('.mesh-more > summary').focus();
+    await page.keyboard.press('Enter');
     await expectCurrent(page, 2070, zero);
     const chart = page.getByTestId('population-trend');
     const card = page.getByTestId('mesh-details');
-    await chart.locator('summary').focus();
-    await page.keyboard.press('Enter');
     await expect(chart.getByRole('table')).toBeVisible();
     const bounds = await card.evaluate((element) => {
       const box = (node) => { const { x, width, right } = node.getBoundingClientRect(); return { x, width, right }; };
@@ -135,7 +136,6 @@ for (const width of [390, 320]) {
     const mapBounds = await page.getByTestId('map-viewport').boundingBox();
     expect(mapBounds.width).toBe(width);
     expect(mapBounds.height).toBeGreaterThanOrEqual(300);
-    await chart.locator('summary').click();
     await card.screenshot({ path: testInfo.outputPath(`trend-mobile-${width}.png`) });
     await page.screenshot({ path: testInfo.outputPath(`trend-mobile-page-${width}.png`), fullPage: true });
     await testInfo.attach('layout', { body: JSON.stringify(bounds), contentType: 'application/json' });

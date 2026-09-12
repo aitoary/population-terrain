@@ -18,7 +18,6 @@ async function expectView(page, year, meshId) {
   await expect(details).toHaveAttribute('data-population', String(source.features.find((feature) => feature.id === meshId).properties.population[year]));
   await expect(page.getByTestId('population-trend')).toHaveAttribute('data-year', String(year));
   await expect(page.getByTestId('population-trend').locator('circle[data-current="true"]')).toHaveAttribute('data-year', String(year));
-  await expect(page.getByTestId('totals')).toHaveAttribute('data-total', String(metadata.totals[year]));
   await expect(page).toHaveURL((url) => url.searchParams.get('year') === String(year) && url.searchParams.get('mesh') === meshId);
   await expect(copyButton(page)).toBeEnabled();
 }
@@ -27,7 +26,7 @@ async function expectRealMap(page) {
   for (const key of ['terrain', 'buildings', 'population', 'border']) {
     await expect(page.getByTestId(`${key}-status`)).toHaveAttribute('data-state', 'ready', { timeout: 90_000 });
   }
-  await expect(page.getByTestId('population-status')).toContainText('692セルを表示');
+  await expect(page.locator('.map-status')).not.toBeVisible();
   await expect(page.getByTestId('map-viewport').locator('canvas')).toHaveCount(1);
 }
 
@@ -35,7 +34,7 @@ test('restores a zero mesh, updates without history growth, and copies a reusabl
   await page.addInitScript(() => history.replaceState({ retained: 'share-link-test' }, ''));
   await page.goto(`/?year=2070&mesh=${zero}&source=share-test#view`);
   await expectView(page, 2070, zero);
-  await expect(page.getByTestId('mesh-details')).toContainText('0人（平面）');
+  await expect(page.locator('.mesh-summary .current-population')).toHaveText('0人');
   await expectRealMap(page);
   await page.waitForTimeout(1500); // Let the real map submit its initial render for the screenshot.
   await page.screenshot({ path: testInfo.outputPath('restored-2070-zero.png') });
@@ -50,9 +49,11 @@ test('restores a zero mesh, updates without history growth, and copies a reusabl
   await page.locator('#population-year').focus();
   await page.keyboard.press('ArrowLeft');
   await expectView(page, 2065, zero);
+  await page.locator('.mesh-more > summary').click();
   await page.locator('#mesh-select').selectOption(slope);
   await expectView(page, 2065, slope);
   const url = page.url();
+  await page.locator('.display-settings > summary').click();
   await page.locator('#population-opacity').fill('0.8');
   for (const label of ['人口', '建物（2025年度 LOD1）', '市境']) {
     await page.getByRole('checkbox', { name: label, exact: true }).uncheck();
@@ -79,7 +80,7 @@ test('restores a zero mesh, updates without history growth, and copies a reusabl
   await expectView(page, 2065, zero);
   await expect(page.locator('#population-opacity')).toHaveValue('0.25');
   for (const label of ['人口', '建物（2025年度 LOD1）', '市境']) {
-    await expect(page.getByRole('checkbox', { name: label, exact: true })).toBeChecked();
+    await expect(page.getByRole('checkbox', { name: label, exact: true, includeHidden: true })).toBeChecked();
   }
 });
 
@@ -136,6 +137,8 @@ test('plays from the current year, stops for manual input and at 2070, and prese
   await page.waitForTimeout(1100);
   await expect(page.locator('#population-year')).toHaveValue('2020');
 
+  await page.locator('.mesh-more > summary').click();
+  await page.locator('.display-settings > summary').click();
   await page.locator('#mesh-select').selectOption(zero);
   await page.getByRole('checkbox', { name: '市境', exact: true }).uncheck();
   await page.locator('#population-year').fill('2065');
@@ -234,6 +237,7 @@ test('announces clipboard denial and unavailable API, then allows retry', async 
   await expect(page.getByTestId('share-status')).toHaveAttribute('role', 'status');
   await expect(page.getByTestId('share-status')).toHaveText('共有リンクをコピーしました。');
   expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(url);
+  await page.locator('.mesh-more > summary').click();
   await page.locator('#mesh-select').selectOption(station);
   await expect(page.getByTestId('share-status')).toHaveText('');
 });
@@ -267,6 +271,7 @@ test('restores the current year and mesh after real map initialization retry', a
   await expect(page.getByRole('alert').filter({ hasText: 'Viewerの初期化失敗:' })).toBeVisible();
   await expectView(page, 2070, zero);
   await page.locator('#population-year').fill('2020');
+  await page.locator('.mesh-more > summary').click();
   await page.locator('#mesh-select').selectOption(slope);
   await expectView(page, 2020, slope);
   const url = page.url();

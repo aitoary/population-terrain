@@ -606,6 +606,7 @@ async function main({ mode, stage }) {
       if (mvpFault !== 'population') {
         const zero = source.features.find((f) => f.properties.population[2070] === 0);
         await page.locator('#population-year').fill('2070');
+        await page.locator('.mesh-more > summary').click({ timeout: remaining() });
         await page.locator('#mesh-select').selectOption(zero.id);
         if (await page.locator('[data-testid="mesh-details"]').getAttribute('data-population') !== '0') throw new Error('Fault lost real zero numeric access');
         await page.locator('#mesh-select').selectOption('594137654');
