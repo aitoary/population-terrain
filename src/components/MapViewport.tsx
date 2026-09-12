@@ -46,14 +46,15 @@ export default function MapViewport({ data, year, selectedId, opacity, layers, o
   const select = useEffectEvent((id: string) => onSelect(id));
 
   useEffect(() => {
-    if (!element.current) return;
+    const container = element.current;
+    if (!container) return;
     let active = true;
     let scene: ReturnType<typeof createViewer> | undefined;
     let connections: typeof controls.current = null;
     let removeRenderError: (() => void) | undefined;
     setMapError(null); setReady(false); setProvider(null);
     try {
-      scene = createViewer(element.current, (message) => { if (active) setMapError(`背景地図の取得失敗: ${message}`); });
+      scene = createViewer(container, (message) => { if (active) setMapError(`背景地図の取得失敗: ${message}`); });
       sceneRef.current = scene;
       if (__ACCEPTANCE__ && new URLSearchParams(location.search).get('acceptance') === '1') Object.assign(window, { __mvpViewer: scene.viewer });
       removeRenderError = scene.viewer.scene.renderError.addEventListener((_scene, error) => { if (active) setMapError(`描画エラー: ${describeError(error)}`); });
@@ -70,6 +71,8 @@ export default function MapViewport({ data, year, selectedId, opacity, layers, o
       samplerRef.current?.sampler.destroy(); samplerRef.current = null;
       connections?.terrain.destroy(); connections?.buildings.destroy();
       removeRenderError?.(); scene?.destroy();
+      // A throwing Cesium constructor can leave DOM without returning a Viewer to destroy.
+      container.replaceChildren();
       if (__ACCEPTANCE__ && '__mvpViewer' in window) delete (window as Window & { __mvpViewer?: unknown }).__mvpViewer;
     };
   }, [mapAttempt]);
