@@ -18,7 +18,8 @@ describe('T09/T10 props-only accessible UI', () => {
   });
   it('renders playback stopped with an accessible label and no automatic start', () => {
     const html = renderToStaticMarkup(<YearControl year={2050} onChange={() => {}} />);
-    expect(html).toContain('aria-label="人口推移を再生（停止中）"');
+    expect(html).toContain('aria-label="再生"');
+    expect(html).toContain('>再生</button>');
     expect(html).toContain('aria-pressed="false"');
     expect(html).toContain('role="status"');
     expect(html).toContain('>停止中</span>');
@@ -27,8 +28,10 @@ describe('T09/T10 props-only accessible UI', () => {
     expect(PLAYBACK_INTERVAL_MS).toBe(900);
     expect(YEARS.map(nextPopulationYear)).toEqual([...YEARS.slice(1), null]);
     const html = renderToStaticMarkup(<YearControl year={2070} onChange={() => {}} />);
-    expect(html).toContain('aria-label="人口推移を再生（2070年で停止中）"');
-    expect(html).toContain('disabled=""');
+    expect(html).toContain('aria-label="2020年から再生"');
+    expect(html).toContain('>2020年から再生</button>');
+    expect(html).not.toContain('disabled=""');
+    expect(html).toContain('aria-pressed="false"');
   });
   it.each([[100, 0, '0人（平面）'], [0, 50, '算出不可（基準人口0）'], [100, null, 'データなし'], [100, 0.01, '0.1人未満']] as const)('labels baseline %s / future %s honestly', (baseline, value, text) => {
     expect(renderToStaticMarkup(<MeshDetails features={[feature(baseline, value)]} selectedId="test" year={2050} onSelect={() => {}} />)).toContain(text);

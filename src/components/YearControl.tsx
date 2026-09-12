@@ -11,12 +11,15 @@ export function nextPopulationYear(year: Year): Year | null {
 
 export function YearControl({ year, onChange }: { year: Year; onChange: (year: Year) => void }) {
   const [isPlaying, setIsPlaying] = useState(false);
+  const [playbackStart, setPlaybackStart] = useState(0);
+  const playingRef = useRef(false);
   const timeoutRef = useRef<number | null>(null);
   const previousYearRef = useRef(year);
   const playbackYearRef = useRef<Year | null>(null);
   const changeYear = useEffectEvent((next: Year) => onChange(next));
 
   function stopPlayback() {
+    playingRef.current = false;
     if (timeoutRef.current !== null) window.clearTimeout(timeoutRef.current);
     timeoutRef.current = null;
     playbackYearRef.current = null;
@@ -27,12 +30,14 @@ export function YearControl({ year, onChange }: { year: Year; onChange: (year: Y
     const previousYear = previousYearRef.current;
     previousYearRef.current = year;
     if (!isPlaying) {
+      playingRef.current = false;
       playbackYearRef.current = null;
       return;
     }
     if (year !== previousYear) {
       // A year that was not requested by this timer is a direct/manual change.
       if (year !== playbackYearRef.current) {
+        playingRef.current = false;
         playbackYearRef.current = null;
         setIsPlaying(false);
         return;
@@ -41,6 +46,7 @@ export function YearControl({ year, onChange }: { year: Year; onChange: (year: Y
     }
     const next = nextPopulationYear(year);
     if (next === null) {
+      playingRef.current = false;
       setIsPlaying(false);
       return;
     }
@@ -48,18 +54,18 @@ export function YearControl({ year, onChange }: { year: Year; onChange: (year: Y
       timeoutRef.current = null;
       playbackYearRef.current = next;
       changeYear(next);
-      if (next === LAST_YEAR) setIsPlaying(false);
+      if (next === LAST_YEAR) { playingRef.current = false; setIsPlaying(false); }
     }, PLAYBACK_INTERVAL_MS);
     return () => {
       if (timeoutRef.current !== null) window.clearTimeout(timeoutRef.current);
       timeoutRef.current = null;
     };
-  }, [isPlaying, year]);
+  }, [isPlaying, year, playbackStart]);
 
   const playbackState = isPlaying ? '再生中' : year === LAST_YEAR ? '停止中（最終年）' : '停止中';
   const playbackLabel = isPlaying
-    ? '人口推移を一時停止（再生中）'
-    : year === LAST_YEAR ? '人口推移を再生（2070年で停止中）' : '人口推移を再生（停止中）';
+    ? '一時停止'
+    : year === LAST_YEAR ? '2020年から再生' : '再生';
   return <section className="year-control" aria-label="対象年">
     <div className="year-control-heading">
       <label htmlFor="population-year">対象年 <strong data-testid="year-label">{year}年</strong> <span>{year === 2020 ? '調整済み基準人口' : '将来推計'}</span></label>
@@ -70,12 +76,21 @@ export function YearControl({ year, onChange }: { year: Year; onChange: (year: Y
           data-testid="playback-toggle"
           aria-label={playbackLabel}
           aria-pressed={isPlaying}
-          disabled={!isPlaying && year === LAST_YEAR}
           onClick={() => {
-            if (isPlaying) stopPlayback();
-            else if (year !== LAST_YEAR) setIsPlaying(true);
+            if (playingRef.current) stopPlayback();
+            else {
+              playingRef.current = true;
+              // Restart the effect even if a rapid stop/start is batched into one render.
+              setPlaybackStart((request) => request + 1);
+              if (year === LAST_YEAR) {
+                // This explicit restart is a playback change, not a manual year change.
+                playbackYearRef.current = YEARS[0];
+                onChange(YEARS[0]);
+              }
+              setIsPlaying(true);
+            }
           }}
-        >{isPlaying ? '一時停止' : '再生'}</button>
+        >{playbackLabel}</button>
         <span className="playback-status" data-testid="playback-status" role="status" aria-live="polite">{playbackState}</span>
       </div>
     </div>

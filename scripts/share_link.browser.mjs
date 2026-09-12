@@ -93,7 +93,7 @@ test('plays from the current year, stops for manual input and at 2070, and prese
   await page.goto(`/?year=2020&mesh=${slope}`);
   await expectView(page, 2020, slope);
   await expect(playbackButton(page)).toHaveAttribute('aria-pressed', 'false');
-  await expect(playbackButton(page)).toHaveAccessibleName('人口推移を再生（停止中）');
+  await expect(playbackButton(page)).toHaveAccessibleName('再生');
   await expect(page.getByTestId('playback-status')).toHaveText('停止中');
   await page.waitForTimeout(1100);
   await expect(page.locator('#population-year')).toHaveValue('2020');
@@ -105,7 +105,7 @@ test('plays from the current year, stops for manual input and at 2070, and prese
   });
 
   await playbackButton(page).click();
-  await expect(playbackButton(page)).toHaveAccessibleName('人口推移を一時停止（再生中）');
+  await expect(playbackButton(page)).toHaveAccessibleName('一時停止');
   await expect(page.getByTestId('playback-status')).toHaveText('再生中');
   await expect(page.locator('#population-year')).toHaveValue('2025', { timeout: 2_000 });
   await playbackButton(page).click();
@@ -142,7 +142,8 @@ test('plays from the current year, stops for manual input and at 2070, and prese
   await playbackButton(page).click();
   await expectView(page, 2070, zero);
   await expect(page.getByTestId('playback-status')).toHaveText('停止中（最終年）');
-  await expect(playbackButton(page)).toBeDisabled();
+  await expect(playbackButton(page)).toBeEnabled();
+  await expect(playbackButton(page)).toHaveAccessibleName('2020年から再生');
   await expect(playbackButton(page)).toHaveAttribute('aria-pressed', 'false');
   await page.waitForTimeout(1100);
   await expect(page.locator('#population-year')).toHaveValue('2070');
