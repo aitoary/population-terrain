@@ -93,6 +93,8 @@ for (const [width, height] of [[1366, 768], [1024, 768], [390, 844], [320, 740]]
     await expect(page.locator('#mesh-heading')).toHaveText('選択地点');
     await expect(page.locator('.featured-select')).toHaveText(['中心部周辺', '市内北側', '内陸西部']);
     await expectCenteredPlaceNames(page);
+    await expect(play(page)).toHaveCSS('background-color', 'rgb(37, 99, 235)');
+    await expect(play(page)).toHaveCSS('color', 'rgb(255, 255, 255)');
     await expect(page.getByRole('button', { name: /コピー/ })).toHaveCount(1);
     const initial = await layout(page);
     const panelScrolls = await panel(page).evaluate((element) => getComputedStyle(element).overflowY === 'auto');

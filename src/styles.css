@@ -46,7 +46,9 @@ h2 { font-size: 18px; margin: 0 0 8px; }
 .year-control strong { font-size: 21px; }
 .year-control input { display: block; width: 100%; height: 28px; margin: 0; accent-color: #125d70; }
 .playback-controls { display: flex; align-items: center; gap: 9px; flex: 0 0 auto; }
-.playback-button { min-width: 80px; min-height: 44px; }
+.playback-button { min-width: 80px; min-height: 44px; background: #2563eb; border-color: #1d4ed8; color: #fff; }
+.playback-button:hover:not(:disabled) { background: #1d4ed8; }
+.playback-button:active:not(:disabled) { background: #1e40af; }
 .year-ticks { display: flex; justify-content: space-between; font-size: 11px; color: #526873; }
 .map-tools { position: relative; grid-row: 1; align-self: start; display: flex; flex-direction: column; width: max-content; max-width: 100%; min-height: 0; max-height: 100%; pointer-events: none; font-size: 11px; }
 .map-tools > * { pointer-events: auto; }
