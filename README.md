@@ -7,6 +7,7 @@
 - 宮古市の実データ**692セル・2020〜2070の11年（5年刻み）のPTN系列**を3D表示。初期年2050、初期選択は駅を含む `594137654`。
 - 年スライダー・キーボード操作・人口推移の再生／一時停止、クリック/全ID選択、人口詳細・対象メッシュ合計、固定高さ/色の凡例。
 - `?year=2070&mesh=594137654` で対象年・選択メッシュを共有。右パネルの「この表示をコピー」で現在URLをコピーできます。
+- 操作パネルの「注目地点」3カードから、中心部周辺・市内北側・内陸西部の人口変化を案内。選ぶと再生を停止して2070年の対象メッシュへ移動し、地点別リンクもコピーできます。[選定理由・全11年の値](docs/featured-locations.md)。
 - 2025年度LOD1建物・人口・市境の独立切替、opacity 0.1〜0.8、駅/全体/選択セルの視点操作。
 - 人口・建物・地形・市境の独立したエラー/再試行。地形・建物が失敗しても人口数値を閲覧可能。0人は選択できる平面、nullは欠損のままです。
 - 年変更でViewer・建物・地形基準高を再作成せず、原本を再取得しません。公開デプロイ、年齢階級別、他都市比較、CityGML変換は対象外です。
@@ -91,11 +92,13 @@ npm run build
 npm run build
 npm run test:browser -- preview --stage mvp
 npm run test:share # 通常本番でURL復元・実クリップボード・初期化再試行を検証
+npm run test:guide # 注目地点の選択・再生停止・地点別共有（別の300秒上限）
 SHARE_DEV=1 npm run test:share # devのStrictMode・非同期読込でも同じ検査
 npm run test:headers # 有限のローカル Workers Static Assets（Viteではない）
 
 # 詳細受入: 専用モードのみ。dist-acceptance は絶対にデプロイしない
 npm run build:acceptance
+GUIDE_ACCEPTANCE=1 npm run test:guide # 注目地点の実カメラ・選択Entity・描画完了も検証
 BROWSER_ACCEPTANCE=1 npm run test:browser -- preview --stage mvp
 # 各操作は別の120秒上限実行に分割
 BROWSER_ACCEPTANCE=1 MVP_SUITE=controls MVP_YEARS=2050 npm run test:browser -- preview --stage mvp

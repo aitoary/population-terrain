@@ -107,8 +107,16 @@ test('plays from the current year, stops for manual input and at 2070, and prese
   await expect(page.getByTestId('playback-status')).toHaveText('再生中');
   await expect(page.locator('#population-year')).toHaveValue('2025', { timeout: 2_000 });
   await playbackButton(page).click();
-  await expectView(page, 2025, slope);
+  // Real Chrome actionability checks can span another 900ms playback tick.
+  // Assert the actual paused year stays fixed rather than racing the click.
+  const pausedYear = Number(await page.locator('#population-year').inputValue());
+  expect(metadata.years).toContain(pausedYear);
+  expect(pausedYear).toBeGreaterThanOrEqual(2025);
+  expect(pausedYear).toBeLessThan(2070);
+  await expectView(page, pausedYear, slope);
   await expect(page.getByTestId('playback-status')).toHaveText('停止中');
+  await page.waitForTimeout(1100);
+  await expectView(page, pausedYear, slope);
 
   await playbackButton(page).click();
   await page.locator('#population-year').fill('2040');
@@ -120,11 +128,11 @@ test('plays from the current year, stops for manual input and at 2070, and prese
   await playbackButton(page).click();
   await expect(page.locator('#population-year')).toHaveValue('2045', { timeout: 2_000 });
   await page.locator('#population-year').focus();
-  await page.keyboard.press('ArrowRight');
-  await expectView(page, 2050, slope);
+  await page.keyboard.press('Home');
+  await expectView(page, 2020, slope);
   await expect(page.getByTestId('playback-status')).toHaveText('停止中');
   await page.waitForTimeout(1100);
-  await expect(page.locator('#population-year')).toHaveValue('2050');
+  await expect(page.locator('#population-year')).toHaveValue('2020');
 
   await page.locator('#mesh-select').selectOption(zero);
   await page.getByRole('checkbox', { name: '市境', exact: true }).uncheck();
@@ -173,6 +181,8 @@ for (const delayed of ['miyako-population.geojson', 'data-meta.json']) {
       await expect(page.locator('#mesh-select')).toBeDisabled();
       await expect(page.getByTestId('mesh-details')).toHaveAttribute('data-mesh-id', station);
       await expect(copyButton(page)).toBeDisabled();
+      await expect(page.getByTestId('featured-card')).toHaveCount(3);
+      for (const button of await page.getByTestId('featured-card').getByRole('button').all()) await expect(button).toBeDisabled();
       const originalUrl = page.url();
       await page.locator('#population-year').fill('2025');
       await expect(page.locator('#population-year')).toHaveValue('2025');

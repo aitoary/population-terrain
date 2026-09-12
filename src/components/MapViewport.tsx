@@ -17,15 +17,16 @@ import type { LayerVisibility } from './LayerControls';
 declare const __ACCEPTANCE__: boolean;
 
 const LOADING: LoadState = { status: 'loading', message: '準備中' };
-export type MapProps = { data: PopulationDataset | null; year: Year; selectedId: string; opacity: number; layers: LayerVisibility; onSelect: (id: string) => void };
+export type MapProps = { data: PopulationDataset | null; year: Year; selectedId: string; selectionFocusRequest: number; opacity: number; layers: LayerVisibility; onSelect: (id: string) => void };
 
-export default function MapViewport({ data, year, selectedId, opacity, layers, onSelect }: MapProps) {
+export default function MapViewport({ data, year, selectedId, selectionFocusRequest, opacity, layers, onSelect }: MapProps) {
   const element = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<ReturnType<typeof createViewer> | null>(null);
   const controls = useRef<{ terrain: LayerControl; buildings: ReturnType<typeof connectBuildings> } | null>(null);
   const samplerRef = useRef<{ provider: CesiumTerrainProvider; sampler: TerrainSampler } | null>(null);
   const populationRef = useRef<PopulationLayer | null>(null);
   const borderRef = useRef<CustomDataSource | null>(null);
+  const appliedFocusRequest = useRef(0);
   const [ready, setReady] = useState(false);
   const [terrain, setTerrain] = useState<LoadState>(LOADING);
   const [buildings, setBuildings] = useState<LoadState>(LOADING);
@@ -150,6 +151,22 @@ export default function MapViewport({ data, year, selectedId, opacity, layers, o
   }, [provider, data, ready, heightAttempt, mapAttempt]);
 
   useEffect(() => { applyCurrent(); }, [year, selectedId, opacity, layers]);
+
+  useEffect(() => {
+    const viewer = sceneRef.current?.viewer;
+    const feature = data?.byId.get(selectedId);
+    if (!ready || !viewer || !feature || selectionFocusRequest === appliedFocusRequest.current) return;
+    const row = populationRef.current?.rows.find((item) => item.feature.id === selectedId);
+    if (!row && terrain.status !== 'error' && population.status !== 'error') return;
+    if (row?.terrain?.status === 'ready') focusMesh(viewer, feature, row.terrain.baseHeight);
+    else {
+      // With no measured terrain, frame the surrounding area from well above
+      // the mountains instead of placing the camera near ellipsoid height zero.
+      const [west, south, east, north] = meshBbox(feature);
+      focusAll(viewer, [west - 0.02, south - 0.02, east + 0.02, north + 0.02]);
+    }
+    appliedFocusRequest.current = selectionFocusRequest;
+  }, [data, ready, selectedId, selectionFocusRequest, population, terrain]);
 
   function focus(kind: 'station' | 'all' | 'selection') {
     const viewer = sceneRef.current?.viewer;

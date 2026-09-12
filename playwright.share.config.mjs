@@ -17,7 +17,7 @@ export default defineConfig({
     baseURL: `http://127.0.0.1:${port}`,
     viewport: { width: 1440, height: 1000 },
     screenshot: 'only-on-failure',
-    trace: 'retain-on-failure',
+    trace: { mode: 'retain-on-failure', screenshots: false },
     launchOptions: {
       executablePath: process.env.CHROME_PATH || '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
       chromiumSandbox: true,
