@@ -65,6 +65,27 @@ button:disabled { opacity: .55; cursor: not-allowed; }
 .mesh-details dl > div { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #d9e1e4; gap: 6px; }
 .mesh-details dd { margin: 0; text-align: right; font-variant-numeric: tabular-nums; }
 .change-state { font-weight: 650; }
+.population-trend { margin: 16px 0; min-width: 0; max-width: 100%; padding-top: 12px; border-top: 1px solid #d9e1e4; }
+.population-trend figcaption { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 6px; font-weight: 650; }
+.population-trend-year { color: #125d70; font-size: 11px; }
+.population-trend svg { display: block; width: 100%; height: auto; margin-top: 8px; overflow: hidden; }
+.population-trend svg text { fill: #526873; font-size: 11px; font-variant-numeric: tabular-nums; }
+.population-trend-grid { stroke: #d9e1e4; stroke-dasharray: 2 3; }
+.population-trend-axis { fill: none; stroke: #8299a3; }
+.population-trend-current { stroke: #125d70; stroke-width: 1.5; stroke-dasharray: 4 3; }
+.population-trend-line { fill: none; stroke: #36766b; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.population-trend-point { fill: #36766b; }
+.population-trend-point[data-current='true'] { fill: #125d70; stroke: #fff; stroke-width: 1.5; }
+.population-trend-note { margin: 0 0 6px; }
+.population-trend-values { font-size: 12px; line-height: 1.8; }
+.population-trend-values summary { cursor: pointer; color: #125d70; }
+.population-trend-values summary:focus-visible { outline: 3px solid #c07720; outline-offset: 3px; }
+.population-trend-values table { width: 100%; margin-top: 8px; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+.population-trend-values th, .population-trend-values td { padding: 4px; border-bottom: 1px solid #d9e1e4; text-align: right; }
+.population-trend-values th:first-child { text-align: left; }
+.population-trend-values tbody th { font-weight: 400; }
+.population-trend-values [aria-current='true'] { background: #e9f1ee; color: #1b5262; }
+.visually-hidden { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
 .share-link { margin-top: 16px; }
 .share-message { margin: 6px 0 0; font-size: 12px; line-height: 1.6; }
 .share-manual-url { width: 100%; margin-top: 6px; font-size: 12px; }

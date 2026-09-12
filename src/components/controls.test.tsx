@@ -32,6 +32,13 @@ describe('T09/T10 props-only accessible UI', () => {
   it.each([[100, 0, '0人（平面）'], [0, 50, '算出不可（基準人口0）'], [100, null, 'データなし'], [100, 0.01, '0.1人未満']] as const)('labels baseline %s / future %s honestly', (baseline, value, text) => {
     expect(renderToStaticMarkup(<MeshDetails features={[feature(baseline, value)]} selectedId="test" year={2050} onSelect={() => {}} />)).toContain(text);
   });
+  it('only shows the trend after the selected mesh is available', () => {
+    const pending = renderToStaticMarkup(<MeshDetails features={[]} selectedId="test" year={2050} onSelect={() => {}} />);
+    expect(pending).not.toContain('data-testid="population-trend"');
+    const loaded = renderToStaticMarkup(<MeshDetails features={[feature(100, 0)]} selectedId="test" year={2070} onSelect={() => {}} />);
+    expect(loaded).toContain('data-testid="population-trend" data-year="2070"');
+    expect(loaded.indexOf('</dl>')).toBeLessThan(loaded.indexOf('data-testid="population-trend"'));
+  });
   it('renders independent visibility and opacity controls', () => {
     const html = renderToStaticMarkup(<LayerControls layers={{ population: true, border: false, buildings: true }} opacity={0.25} onVisibility={() => {}} onOpacity={() => {}} />);
     expect(html.match(/type="checkbox"/g)).toHaveLength(3); expect(html).toContain('min="0.1"'); expect(html).toContain('max="0.8"');
