@@ -7,9 +7,9 @@ const metadata = JSON.parse(readFileSync(new URL('../public/data/data-meta.json'
 const ids = ['594137744', '594147883', '594132791'];
 const acceptance = process.env.GUIDE_ACCEPTANCE === '1' && process.env.SHARE_DEV !== '1';
 const query = acceptance ? '&acceptance=1' : '';
-const card = (page, id) => page.locator(`[data-testid="featured-card"][data-mesh-id="${id}"]`);
-const selectCard = (page, id) => card(page, id).getByRole('button', { name: /を2070年で見る$/ });
-const copyCard = (page, id) => card(page, id).getByRole('button', { name: /のリンクをコピー$/ });
+const location = (page, id) => page.locator(`[data-testid="featured-location"][data-mesh-id="${id}"]`);
+const selectLocation = (page, id) => location(page, id).getByRole('button', { name: /を2070年で見る$/ });
+const copySelection = (page) => page.getByTestId('mesh-details').getByRole('button', { name: 'この表示をコピー', exact: true });
 
 async function expectView(page, year, id) {
   const values = source.features.find((feature) => feature.id === id).properties.population;
@@ -73,8 +73,9 @@ test(`guides real mesh ${guideId}, stops playback and shares the destination`, a
   await page.addInitScript(() => history.replaceState({ retained: 'featured-test' }, ''));
   await page.goto(`/?year=2020&mesh=594115541&source=featured${query}#guide`);
   await expectView(page, 2020, '594115541');
-  await expect(page.getByTestId('featured-card')).toHaveCount(3);
-  await expect(page.getByRole('region', { name: '注目地点', exact: true })).toContainText('無人・非居住を意味しません');
+  await expect(page.getByTestId('featured-location')).toHaveCount(3);
+  await expect(page.getByRole('region', { name: '注目地点', exact: true })).toContainText('見る場所に迷ったら');
+  await expect(page.locator('#data-notes')).toContainText('建物なし・読込失敗は無人口を意味しません');
   await expectRealMap(page);
   const graphics = await page.evaluate(() => {
     const canvas = document.querySelector('[data-testid="map-viewport"] canvas');
@@ -98,32 +99,31 @@ test(`guides real mesh ${guideId}, stops playback and shares the destination`, a
   for (const id of [guideId]) {
     const values = source.features.find((feature) => feature.id === id).properties.population;
     const rate = (values[2070] - values[2020]) / values[2020] * 100;
-    await expect(card(page, id)).toHaveAttribute('data-baseline', String(values[2020]));
-    await expect(card(page, id)).toHaveAttribute('data-population', String(values[2070]));
-    await expect(card(page, id)).toHaveAttribute('data-rate', String(rate));
-    await expect(card(page, id)).toContainText(`${rate.toFixed(1)}%`);
+    await expect(location(page, id)).toHaveAttribute('data-baseline', String(values[2020]));
+    await expect(location(page, id)).toHaveAttribute('data-population', String(values[2070]));
+    await expect(location(page, id)).toHaveAttribute('data-rate', String(rate));
+    await expect(location(page, id)).toContainText(`${rate.toFixed(1)}%`);
     await page.locator('#population-year').fill('2020');
-    const currentUrl = page.url();
-    await copyCard(page, id).click();
-    await expect(page.getByTestId(`featured-share-${id}`)).toHaveText('共有リンクをコピーしました。');
-    expect(page.url()).toBe(currentUrl);
-    const copied = await page.evaluate(() => navigator.clipboard.readText());
-    const destination = new URL(currentUrl);
-    destination.searchParams.set('year', '2070');
-    destination.searchParams.set('mesh', id);
-    expect(copied).toBe(destination.href);
-    copiedUrls.push(copied);
 
     await page.getByTestId('playback-toggle').click();
     await expect(page.getByTestId('playback-toggle')).toHaveAttribute('aria-pressed', 'true');
-    await selectCard(page, id).click();
+    await selectLocation(page, id).click();
     await expectView(page, 2070, id);
-    await expect(selectCard(page, id)).toHaveAttribute('aria-pressed', 'true');
+    await expect(selectLocation(page, id)).toHaveAttribute('aria-pressed', 'true');
     await expect(page.getByTestId('playback-status')).toHaveText('停止中（最終年）');
     await expect(page.getByTestId('playback-toggle')).toHaveAttribute('aria-pressed', 'false');
     await page.waitForTimeout(1100);
     await expectView(page, 2070, id);
     await expectCameraAndSelection(page, id);
+
+    const currentUrl = page.url();
+    await expect(page.getByRole('button', { name: /コピー/ })).toHaveCount(1);
+    await copySelection(page).click();
+    await expect(page.getByTestId('share-status')).toHaveText('共有リンクをコピーしました。');
+    const copied = await page.evaluate(() => navigator.clipboard.readText());
+    expect(copied).toBe(currentUrl);
+    expect(page.url()).toBe(currentUrl);
+    copiedUrls.push(copied);
 
     if (acceptance) {
       try { await waitMvpRendered(page, () => 30_000); }
@@ -147,7 +147,7 @@ test(`guides real mesh ${guideId}, stops playback and shares the destination`, a
     // Exercise the shared re-selection path once, after capturing the settled view.
     if (id === ids[0]) {
       await page.getByRole('button', { name: '宮古駅周辺', exact: true }).click();
-      await selectCard(page, id).click();
+      await selectLocation(page, id).click();
       await expectCameraAndSelection(page, id);
     }
   }
@@ -162,43 +162,70 @@ test(`guides real mesh ${guideId}, stops playback and shares the destination`, a
     await page.goto('about:blank');
     await page.goto(url);
     await expectView(page, 2070, guideId);
-    await expect(selectCard(page, guideId)).toHaveAttribute('aria-pressed', 'true');
+    await expect(selectLocation(page, guideId)).toHaveAttribute('aria-pressed', 'true');
   }
 });
 }
 
-test('offers the correct manual destination on clipboard failure and retries independently', async ({ page, context }) => {
-  await page.goto(`/?year=2020&mesh=594137654${query}#guide`);
-  await expectView(page, 2020, '594137654');
-  const currentUrl = page.url();
-  const id = ids[2];
-  const destination = new URL(currentUrl);
-  destination.searchParams.set('year', '2070');
-  destination.searchParams.set('mesh', id);
-  for (const unavailable of [false, true]) {
-    await page.evaluate((unavailable) => {
-      Object.defineProperty(navigator, 'clipboard', { configurable: true, value: unavailable ? undefined : {
-        writeText: () => Promise.reject(new DOMException('Permission denied', 'NotAllowedError')),
-      } });
-    }, unavailable);
-    await copyCard(page, id).click();
-    await expect(page.getByTestId(`featured-share-${id}`)).toHaveAttribute('role', 'alert');
-    await expect(card(page, id).getByRole('textbox')).toHaveValue(destination.href);
-    await expect(card(page, id).getByRole('textbox')).toHaveAttribute('readonly', '');
-    await expect(copyCard(page, id)).toBeEnabled();
-    await expect(page.getByTestId(`featured-share-${ids[0]}`)).toHaveText('');
-    expect(page.url()).toBe(currentUrl);
-  }
-  await page.evaluate(() => { delete navigator.clipboard; });
-  await context.grantPermissions(['clipboard-read', 'clipboard-write']);
-  await copyCard(page, id).click();
-  await expect(page.getByTestId(`featured-share-${id}`)).toHaveText('共有リンクをコピーしました。');
-  await expect(card(page, id).getByRole('textbox')).toHaveCount(0);
-  expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(destination.href);
-  await expectView(page, 2020, '594137654');
-});
+for (const width of [1440, 390, 320]) {
+  test(`puts mesh details first with three compact choices and one share action at ${width}px`, async ({ page }, testInfo) => {
+    await page.setViewportSize({ width, height: width === 1440 ? 1000 : 844 });
+    await page.goto(`/?year=2050&mesh=594137654${query}`);
+    await expectView(page, 2050, '594137654');
+    const panel = page.getByRole('complementary', { name: '人口の詳細と表示設定' });
+    const details = page.getByTestId('mesh-details');
+    const featured = page.getByRole('region', { name: '注目地点', exact: true });
+    await expect(panel.locator('section').first()).toHaveAttribute('data-testid', 'mesh-details');
+    await expect(featured.getByRole('button')).toHaveCount(3);
+    await expect(featured.getByRole('button', { pressed: true })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: /コピー/ })).toHaveCount(1);
+    await expect(copySelection(page)).toBeEnabled();
+    await expect(featured.locator('.featured-values, .share-link')).toHaveCount(0);
+    const layout = await panel.evaluate((element) => {
+      const box = (selector) => {
+        const { top, bottom, left, right, height } = element.querySelector(selector).getBoundingClientRect();
+        return { top, bottom, left, right, height };
+      };
+      return {
+        details: box('.mesh-details'), chart: box('.population-trend'), share: box('.share-link'),
+        featured: box('.featured-locations'), choices: box('.featured-list'), layers: box('.layer-controls'),
+        panelTop: element.getBoundingClientRect().top, panelBottom: element.getBoundingClientRect().bottom,
+        pageOverflow: document.documentElement.scrollWidth - innerWidth,
+      };
+    });
+    expect(layout.details.top - layout.panelTop).toBeLessThanOrEqual(22);
+    expect(layout.chart.bottom).toBeLessThan(layout.share.top);
+    expect(layout.details.bottom).toBeLessThanOrEqual(layout.featured.top);
+    expect(layout.featured.bottom).toBeLessThanOrEqual(layout.layers.top);
+    expect(layout.choices.height).toBeLessThan(220);
+    expect(layout.featured.height).toBeLessThan(300);
+    expect(layout.pageOverflow).toBe(0);
+    expect(layout.details.left).toBeGreaterThanOrEqual(0);
+    expect(layout.details.right).toBeLessThanOrEqual(width);
+    if (width === 1440) expect(layout.chart.bottom).toBeLessThan(layout.panelBottom);
+    for (const id of ids) {
+      const choice = selectLocation(page, id);
+      const values = source.features.find((feature) => feature.id === id).properties.population;
+      const rate = (values[2070] - values[2020]) / values[2020] * 100;
+      await expect(choice).toHaveAccessibleDescription(new RegExp(`2070年の2020年比 ${rate.toFixed(1)}%`));
+      expect((await choice.boundingBox()).height).toBeGreaterThanOrEqual(44);
+    }
+    await testInfo.attach('panel-layout', { body: JSON.stringify(layout), contentType: 'application/json' });
+    if (width === 1440) await panel.screenshot({ path: testInfo.outputPath('panel-top.png') });
+    else await page.screenshot({ path: testInfo.outputPath(`panel-mobile-${width}.png`), fullPage: true });
+    await featured.screenshot({ path: testInfo.outputPath(`compact-choices-${width}.png`) });
 
-test('retains an early card navigation until the lazy map is ready', async ({ page }) => {
+    await selectLocation(page, ids[2]).focus();
+    await page.keyboard.press('Enter');
+    await expectView(page, 2070, ids[2]);
+    await expect(featured.getByRole('button', { pressed: true })).toHaveCount(1);
+    await page.locator('#mesh-select').selectOption('594137654');
+    await expectView(page, 2070, '594137654');
+    await expect(featured.getByRole('button', { pressed: true })).toHaveCount(0);
+  });
+}
+
+test('retains an early location choice until the lazy map is ready', async ({ page }) => {
   let release;
   const gate = new Promise((resolve) => { release = resolve; });
   await page.route(/\/MapViewport(?:-[^/?]+\.js|\.tsx)(?:\?|$)/, async (route) => { await gate; await route.continue(); });
@@ -206,7 +233,7 @@ test('retains an early card navigation until the lazy map is ready', async ({ pa
   const id = ids[2];
   try {
     await expectView(page, 2020, '594137654');
-    await selectCard(page, id).click();
+    await selectLocation(page, id).click();
     await expectView(page, 2070, id);
     await expect(page.getByText('3Dエンジンを読み込み中…')).toBeVisible();
   } finally { release(); }

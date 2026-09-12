@@ -183,8 +183,8 @@ for (const delayed of ['miyako-population.geojson', 'data-meta.json']) {
       await expect(page.locator('#mesh-select')).toBeDisabled();
       await expect(page.getByTestId('mesh-details')).toHaveAttribute('data-mesh-id', station);
       await expect(copyButton(page)).toBeDisabled();
-      await expect(page.getByTestId('featured-card')).toHaveCount(3);
-      for (const button of await page.getByTestId('featured-card').getByRole('button').all()) await expect(button).toBeDisabled();
+      await expect(page.getByTestId('featured-location')).toHaveCount(3);
+      for (const button of await page.getByTestId('featured-location').getByRole('button').all()) await expect(button).toBeDisabled();
       const originalUrl = page.url();
       await page.locator('#population-year').fill('2025');
       await expect(page.locator('#population-year')).toHaveValue('2025');
