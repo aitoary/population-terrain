@@ -4,7 +4,7 @@ body { margin: 0; }
 button, select, input { font: inherit; }
 button { cursor: pointer; }
 button:disabled { cursor: wait; }
-button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, summary:focus-visible { outline: 3px solid #c07720; outline-offset: 3px; }
+button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, summary:focus-visible, #mesh-heading:focus { outline: 3px solid #c07720; outline-offset: 3px; }
 a { color: #125d70; text-underline-offset: 3px; }
 .app-shell { height: 100dvh; min-height: 680px; display: grid; grid-template-rows: auto auto minmax(0, 1fr) auto; }
 .app-header { padding: 16px 24px; display: flex; justify-content: space-between; align-items: center; background: #fff; border-bottom: 1px solid #ccd6da; }
@@ -15,7 +15,7 @@ h1 { margin: 3px 0 0; font-size: 24px; font-weight: 650; letter-spacing: .04em; 
 .map-stage { position: absolute; inset: 0 320px 0 0; display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(80px, 1fr) minmax(0, auto); gap: 12px; padding: 12px 12px var(--map-credit-height, 70px); min-width: 0; }
 .map-viewport { position: absolute; inset: 0; background: #132a37; }
 .app-footer { padding: 10px 24px; font-size: 12px; line-height: 1.7; background: #fff; border-top: 1px solid #ccd6da; }
-.inspection-panel { position: absolute; right: 0; top: 0; bottom: 0; width: 320px; overflow-y: auto; padding: 22px; background: #f8fafb; border-left: 1px solid #ccd6da; font-size: 13px; }
+.inspection-panel { position: absolute; right: 0; top: 0; bottom: 0; width: 320px; overflow-y: auto; overflow-anchor: none; padding: 22px; background: #f8fafb; border-left: 1px solid #ccd6da; font-size: 13px; }
 h2 { font-size: 18px; margin: 0 0 8px; }
 .muted { color: #607580; font-size: 12px; }
 .load-states { padding: 0; margin: 20px 0; list-style: none; }

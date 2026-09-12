@@ -1,9 +1,10 @@
+import type { Ref } from 'react';
 import { changeCategory, CHANGE_STYLES, changeRate, formatChangeRate, formatPopulation, populationDifference } from '../domain/population';
 import type { MeshFeature, Year } from '../domain/types';
 import { PopulationTrendChart } from './PopulationTrendChart';
 import { ShareLink } from './ShareLink';
-export function MeshDetails({ features, selectedId, year, onSelect }: {
-  features: readonly MeshFeature[]; selectedId: string; year: Year; onSelect: (id: string) => void;
+export function MeshDetails({ features, selectedId, year, onSelect, headingRef }: {
+  features: readonly MeshFeature[]; selectedId: string; year: Year; onSelect: (id: string) => void; headingRef?: Ref<HTMLHeadingElement>;
 }) {
   const feature = features.find((item) => item.id === selectedId);
   const baseline = feature?.properties.population[2020] ?? null;
@@ -11,7 +12,7 @@ export function MeshDetails({ features, selectedId, year, onSelect }: {
   const difference = populationDifference(baseline, value);
   const rate = changeRate(baseline, value);
   return <section className="mesh-details" aria-labelledby="mesh-heading" data-testid="mesh-details" data-mesh-id={selectedId} data-year={year} data-population={value ?? 'null'} data-baseline={baseline ?? 'null'} data-rate={rate ?? 'null'}>
-    <h2 id="mesh-heading">選択メッシュ</h2>
+    <h2 id="mesh-heading" ref={headingRef} tabIndex={-1}>選択メッシュ</h2>
     <label htmlFor="mesh-select">メッシュID（人口非表示・0人でも選択可）</label>
     <select id="mesh-select" value={selectedId} disabled={!features.length} onChange={(event) => onSelect(event.target.value)}>
       {!features.length && <option value={selectedId}>{selectedId} · 読込待機中</option>}

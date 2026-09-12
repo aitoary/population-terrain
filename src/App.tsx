@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useState } from 'react';
+import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { loadPopulation } from './data/loadPopulation';
 import { changeRate, formatChangeRate, formatPopulation } from './domain/population';
 import { readSharedView, resolveSharedMesh, sharedViewUrl } from './domain/shareLink';
@@ -25,12 +25,31 @@ export default function App() {
   const [error, setError] = useState<string | null>(null);
   const [attempt, setAttempt] = useState(0);
   const [selectionFocusRequest, setSelectionFocusRequest] = useState(0);
+  const panelRef = useRef<HTMLElement>(null);
+  const detailsHeadingRef = useRef<HTMLHeadingElement>(null);
   function selectFeaturedLocation(meshId: string) {
     if (!data?.byId.has(meshId)) return;
     // YearControl stops its timer on this external change to the final year.
     setView({ year: FEATURED_YEAR, meshId });
     // A separate camera command also supports selecting the same location again.
     setSelectionFocusRequest((request) => request + 1);
+    const panel = panelRef.current;
+    const heading = detailsHeadingRef.current;
+    if (!panel || !heading) return;
+    // Keep keyboard focus at the newly revealed content, without implicit page scrolling.
+    heading.focus({ preventScroll: true });
+    const panelStyle = window.getComputedStyle(panel);
+    if (panelStyle.overflowY === 'auto') {
+      const headingTop = heading.getBoundingClientRect().top;
+      const chart = panel.querySelector('.population-trend svg');
+      const readingHeight = chart ? chart.getBoundingClientRect().bottom - headingTop : 0;
+      // Use the available top padding to fit the chart on shorter desktop panels.
+      const inset = Math.min(parseFloat(panelStyle.paddingTop), Math.max(8, panel.clientHeight - readingHeight - 4));
+      panel.scrollTo({ top: panel.scrollTop + headingTop - panel.getBoundingClientRect().top - inset, behavior: 'instant' });
+    } else {
+      // The mobile inspector is in document flow, so reveal it in that scroll context.
+      window.scrollTo({ top: window.scrollY + heading.getBoundingClientRect().top - 16, behavior: 'instant' });
+    }
   }
   useEffect(() => {
     const request = new AbortController();
@@ -60,9 +79,9 @@ export default function App() {
         <Suspense fallback={<p className="map-loading" role="status">3Dエンジンを読み込み中…</p>}><MapViewport data={data} year={year} selectedId={selectedId} selectionFocusRequest={selectionFocusRequest} opacity={opacity} layers={layers} onSelect={(meshId) => setView((previous) => ({ ...previous, meshId }))} /></Suspense>
         <Legend populationVisible={layers.population} />
       </div>
-      <aside className="inspection-panel" aria-label="人口の詳細と表示設定">
+      <aside ref={panelRef} className="inspection-panel" aria-label="人口の詳細と表示設定">
         <div data-testid="data-status" data-state={error ? 'error' : data ? 'ready' : 'loading'} aria-live="polite">{error ? <p role="alert">人口の取得・検査失敗: {error}<button onClick={() => setAttempt((n) => n + 1)}>人口を再試行</button></p> : data ? null : <p>人口の11年分を読み込み中…</p>}</div>
-        <MeshDetails features={data?.collection.features ?? EMPTY_FEATURES} selectedId={selectedId} year={year} onSelect={(meshId) => setView((previous) => ({ ...previous, meshId }))} />
+        <MeshDetails headingRef={detailsHeadingRef} features={data?.collection.features ?? EMPTY_FEATURES} selectedId={selectedId} year={year} onSelect={(meshId) => setView((previous) => ({ ...previous, meshId }))} />
         <FeaturedLocations data={data} selectedId={selectedId} onSelect={selectFeaturedLocation} />
         <LayerControls layers={layers} opacity={opacity} onVisibility={(key, visible) => setLayers((previous) => ({ ...previous, [key]: visible }))} onOpacity={setOpacity} />
         <DataNotes />
