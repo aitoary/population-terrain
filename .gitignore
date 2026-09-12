@@ -1,5 +1,6 @@
 node_modules/
 dist/
+dist-acceptance/
 .vite/
 .venv/
 __pycache__/

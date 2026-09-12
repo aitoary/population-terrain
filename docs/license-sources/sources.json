@@ -1,0 +1,57 @@
+[
+  {
+    "file": "niantic-spz-LICENSE.txt",
+    "url": "https://raw.githubusercontent.com/nianticlabs/spz/cc5671d716740e02d57816d4a4a38d164926e695/LICENSE",
+    "sha256": "d2b852220d1043148f523c4154e8bf7d9c5e419aede33b4c94115cfc457e4714",
+    "acquiredAt": "2026-09-06"
+  },
+  { "file": "wasm-splats-LICENSE.md", "url": "https://raw.githubusercontent.com/CesiumGS/cesium-wasm-utils/96a2fbae7ab1d117dd533fe558f0e061bed6762b/LICENSE.md", "sha256": "28a2c9a11e7da1844f91eec9dafb9de21b3f70f21b994691062f00dcbdc0e900" },
+  { "file": "maki-LICENSE.txt", "url": "https://raw.githubusercontent.com/mapbox/maki/main/LICENSE.txt", "sha256": "36ffd9dc085d529a7e60e1276d73ae5a030b020313e6c5408593a6ae2af39673" },
+  { "file": "babel-LICENSE.txt", "url": "https://raw.githubusercontent.com/babel/babel/main/LICENSE", "sha256": "117da2af0d4ce0fe1c8e19b5cff9dcd806adf973d328d27b11d4448c4ff24f76" },
+  { "file": "CC-BY-3.0.txt", "url": "https://creativecommons.org/licenses/by/3.0/legalcode.txt", "sha256": "e6bc9e9c474700b708f568bac9e5a8a9bcb2b1dad53442f5ba449fcb848b8e76" },
+  {
+    "file": "dlmalloc-0.2.7-LICENSES.txt",
+    "url": "https://static.crates.io/crates/dlmalloc/dlmalloc-0.2.7.crate",
+    "archiveSha256": "d9b5e0d321d61de16390ed273b647ce51605b575916d3c25e6ddf27a1e140035",
+    "sha256": "aaad7dac3278b7adc130bbe8c15558ff3dab3b0e0b71f2d3667ae18e4964ac49"
+  },
+  {
+    "file": "js-sys-0.3.77-LICENSES.txt",
+    "url": "https://static.crates.io/crates/js-sys/js-sys-0.3.77.crate",
+    "archiveSha256": "1cfaf33c695fc6e08064efbc1f72ec937429614f25eef83af942d0e227c3a28f",
+    "sha256": "301e4ad0d310eb2e91ba6e6db1e0091774cb4db1d875f9a249ffc84be31ca813"
+  },
+  {
+    "file": "once_cell-1.21.3-LICENSES.txt",
+    "url": "https://static.crates.io/crates/once_cell/once_cell-1.21.3.crate",
+    "archiveSha256": "42f5e15c9953c5e4ccceeb2e7382a716482c34515315f7b03532b8b4e8393d2d",
+    "sha256": "541c53799fa89809cc6ca0bb2c5453a73547ae58bfb186f0c0c7532710e9947a"
+  },
+  {
+    "file": "wasm-bindgen-0.2.100-LICENSES.txt",
+    "url": "https://static.crates.io/crates/wasm-bindgen/wasm-bindgen-0.2.100.crate",
+    "archiveSha256": "1edc8929d7499fc4e8f0be2262a241556cfc54a0bea223790e71446f2aab1ef5",
+    "sha256": "99ba94eb4952fddc4eab3aae082d7852980baadb29e236a33f1e363ffc0379b7"
+  },
+  {
+    "file": "console_error_panic_hook-0.1.7-LICENSES.txt",
+    "url": "https://static.crates.io/crates/console_error_panic_hook/console_error_panic_hook-0.1.7.crate",
+    "archiveSha256": "a06aeb73f470f66dcdbf7223caeebb85984942f22f1adb2a088cf9668146bbbc",
+    "sha256": "07529444d5c6c54d33b609181cd7e449f9e00ca303d9598b17cc743edd6a64b8"
+  },
+  {
+    "file": "rust-LICENSE-MIT.txt",
+    "url": "https://raw.githubusercontent.com/rust-lang/rust/05f9846f893b09a1be1fc8560e33fc3c815cfecb/LICENSE-MIT",
+    "sha256": "b71bd43a069ca0641a9ecfe585ca7b3c53b5cc1608f8b68321168698e28b5ea1"
+  },
+  {
+    "file": "basis-LICENSE.txt",
+    "url": "https://raw.githubusercontent.com/BinomialLLC/basis_universal/v1_15/LICENSE",
+    "sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4"
+  },
+  {
+    "file": "draco-LICENSE.txt",
+    "url": "https://raw.githubusercontent.com/google/draco/1.5.7/LICENSE",
+    "sha256": "d3709b0fb4b8a94bbb1d02b8a2e484f258b0d9c5c5a01f940391f3fe662cd1a4"
+  }
+]

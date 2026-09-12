@@ -14,6 +14,8 @@ import { connectSelection } from '../map/selection';
 import { focusAll, focusMesh, focusStation } from '../map/camera';
 import type { LayerVisibility } from './LayerControls';
 
+declare const __ACCEPTANCE__: boolean;
+
 const LOADING: LoadState = { status: 'loading', message: '準備中' };
 export type MapProps = { data: PopulationDataset | null; year: Year; selectedId: string; opacity: number; layers: LayerVisibility; onSelect: (id: string) => void };
 
@@ -53,7 +55,7 @@ export default function MapViewport({ data, year, selectedId, opacity, layers, o
     try {
       scene = createViewer(element.current, (message) => { if (active) setMapError(`背景地図の取得失敗: ${message}`); });
       sceneRef.current = scene;
-      if (new URLSearchParams(location.search).get('acceptance') === '1') Object.assign(window, { __mvpViewer: scene.viewer });
+      if (__ACCEPTANCE__ && new URLSearchParams(location.search).get('acceptance') === '1') Object.assign(window, { __mvpViewer: scene.viewer });
       removeRenderError = scene.viewer.scene.renderError.addEventListener((_scene, error) => { if (active) setMapError(`描画エラー: ${describeError(error)}`); });
       connections = {
         terrain: connectTerrain(scene.viewer, (state) => { if (active) setTerrain(state); }, (next) => { if (active) setProvider(next); }),
@@ -68,7 +70,7 @@ export default function MapViewport({ data, year, selectedId, opacity, layers, o
       samplerRef.current?.sampler.destroy(); samplerRef.current = null;
       connections?.terrain.destroy(); connections?.buildings.destroy();
       removeRenderError?.(); scene?.destroy();
-            if ('__mvpViewer' in window) delete (window as Window & { __mvpViewer?: unknown }).__mvpViewer;
+      if (__ACCEPTANCE__ && '__mvpViewer' in window) delete (window as Window & { __mvpViewer?: unknown }).__mvpViewer;
     };
   }, [mapAttempt]);
 
@@ -130,8 +132,8 @@ export default function MapViewport({ data, year, selectedId, opacity, layers, o
         removeSelection = connectSelection(viewer, layer.source, select);
         const failed = layer.rows.filter((row) => row.terrain?.status !== 'ready').length;
         setPopulation(failed ? { status: 'error', message: `高さ取得失敗 ${failed}/${data.metadata.meshCount}セル。数値は引き続き参照できます。` } : { status: 'ready', message: `${data.metadata.meshCount}セルを表示` });
-        // Opt-in, local acceptance inspection of actual Cesium objects; never substitutes data.
-        if (new URLSearchParams(location.search).get('acceptance') === '1') {
+        // Compiled out of ordinary builds; local acceptance never substitutes data.
+        if (__ACCEPTANCE__ && new URLSearchParams(location.search).get('acceptance') === '1') {
           Object.assign(window, { __mvp: { viewer, layer, bases } });
         }
       } catch (error) { if (active && !viewer.isDestroyed()) setPopulation({ status: 'error', message: `人口描画の準備失敗: ${describeError(error)}` }); }
@@ -140,7 +142,7 @@ export default function MapViewport({ data, year, selectedId, opacity, layers, o
       active = false; removeSelection?.(); removeVisibility?.(); populationRef.current = null;
       if (layer && !viewer.isDestroyed()) viewer.dataSources.remove(layer.source, true);
       layer?.destroy();
-      if ('__mvp' in window) delete (window as Window & { __mvp?: unknown }).__mvp;
+      if (__ACCEPTANCE__ && '__mvp' in window) delete (window as Window & { __mvp?: unknown }).__mvp;
     };
   }, [provider, data, ready, heightAttempt, mapAttempt]);
 
