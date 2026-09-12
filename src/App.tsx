@@ -9,7 +9,6 @@ import { Legend } from './components/Legend';
 import { MeshDetails } from './components/MeshDetails';
 import { DataNotes } from './components/DataNotes';
 import { Attribution } from './components/Attribution';
-import { ShareLink } from './components/ShareLink';
 import { FeaturedLocations } from './components/FeaturedLocations';
 import { FEATURED_YEAR } from './config/featuredLocations';
 
@@ -30,7 +29,7 @@ export default function App() {
     if (!data?.byId.has(meshId)) return;
     // YearControl stops its timer on this external change to the final year.
     setView({ year: FEATURED_YEAR, meshId });
-    // A separate camera command also supports selecting the same card again.
+    // A separate camera command also supports selecting the same location again.
     setSelectionFocusRequest((request) => request + 1);
   }
   useEffect(() => {
@@ -59,10 +58,9 @@ export default function App() {
     <main className="map-shell has-panel">
       <Suspense fallback={<p className="map-loading" role="status">3Dエンジンを読み込み中…</p>}><MapViewport data={data} year={year} selectedId={selectedId} selectionFocusRequest={selectionFocusRequest} opacity={opacity} layers={layers} onSelect={(meshId) => setView((previous) => ({ ...previous, meshId }))} /></Suspense>
       <aside className="inspection-panel" aria-label="人口の詳細と表示設定">
-        <div data-testid="data-status" data-state={error ? 'error' : data ? 'ready' : 'loading'} aria-live="polite">{error ? <p role="alert">人口の取得・検査失敗: {error}<button onClick={() => setAttempt((n) => n + 1)}>人口を再試行</button></p> : data ? <p className="muted">PTN · {data.metadata.meshCount}件 · 11年分読込済み</p> : <p>人口の11年分を読み込み中…</p>}</div>
-        <FeaturedLocations data={data} selectedId={selectedId} onSelect={selectFeaturedLocation} />
+        <div data-testid="data-status" data-state={error ? 'error' : data ? 'ready' : 'loading'} aria-live="polite">{error ? <p role="alert">人口の取得・検査失敗: {error}<button onClick={() => setAttempt((n) => n + 1)}>人口を再試行</button></p> : data ? null : <p>人口の11年分を読み込み中…</p>}</div>
         <MeshDetails features={data?.collection.features ?? EMPTY_FEATURES} selectedId={selectedId} year={year} onSelect={(meshId) => setView((previous) => ({ ...previous, meshId }))} />
-        <ShareLink key={`${year}:${selectedId}`} disabled={!data} />
+        <FeaturedLocations data={data} selectedId={selectedId} onSelect={selectFeaturedLocation} />
         <LayerControls layers={layers} opacity={opacity} onVisibility={(key, visible) => setLayers((previous) => ({ ...previous, [key]: visible }))} onOpacity={setOpacity} />
         <Legend /><DataNotes />
       </aside>

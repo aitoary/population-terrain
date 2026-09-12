@@ -25,26 +25,31 @@ describe('featured locations from the pinned PTN dataset', () => {
     const rate = changeRate(baseline, future);
     const html = renderToStaticMarkup(<FeaturedLocations data={data} selectedId={meshId} onSelect={() => {}} />);
     expect(html).toContain(`data-baseline="${baseline}" data-population="${future}" data-rate="${rate}"`);
-    expect(html).toContain(`${formatPopulation(baseline)} → ${formatPopulation(future)}`);
-    expect(html).toContain(`増減率 ${formatChangeRate(rate)}`);
+    expect(html).not.toContain(`${formatPopulation(baseline)} → ${formatPopulation(future)}`);
+    expect(html).toContain(formatChangeRate(rate));
     expect(html.match(/aria-pressed="true"/g)).toHaveLength(1);
   });
 
-  it('offers three distinct accessible cards and explains the building coverage limit', () => {
+  it('offers three compact choices with an introduction, descriptions and no duplicate sharing', () => {
     expect(new Set(FEATURED_LOCATIONS.map((point) => point.meshId)).size).toBe(3);
     const html = renderToStaticMarkup(<FeaturedLocations data={data} selectedId="594137654" onSelect={() => {}} />);
-    expect(html.match(/data-testid="featured-card"/g)).toHaveLength(3);
-    expect(html.match(/type="button"/g)).toHaveLength(6);
-    expect(html).toContain('2020年に戻して再生');
-    expect(html).toContain('500mメッシュ全体');
-    expect(html).toContain('整備範囲外にも人口');
-    expect(html).toContain('無人・非居住を意味しません');
+    expect(html.match(/data-testid="featured-location"/g)).toHaveLength(3);
+    expect(html.match(/type="button"/g)).toHaveLength(3);
+    expect(html).toContain('見る場所に迷ったら');
+    expect(html).toContain('2070年・2020年比');
+    for (const { meshId, name, description } of FEATURED_LOCATIONS) {
+      expect(html).toContain(`aria-label="${name}を2070年で見る"`);
+      expect(html).toContain(`aria-describedby="featured-description-${meshId} featured-rate-${meshId}"`);
+      expect(html).toContain(description);
+    }
+    expect(html).not.toContain('コピー');
+    expect(html).not.toContain('aria-pressed="true"');
     expect(html).not.toContain('disabled=""');
   });
 
-  it('keeps all navigation and copying disabled while population is unavailable', () => {
+  it('keeps the three choices disabled while population is unavailable', () => {
     const html = renderToStaticMarkup(<FeaturedLocations data={null} selectedId="594137654" onSelect={() => {}} />);
-    expect(html.match(/disabled=""/g)).toHaveLength(6);
+    expect(html.match(/disabled=""/g)).toHaveLength(3);
     expect(html.match(/data-baseline="null"/g)).toHaveLength(3);
     expect(html).not.toContain('>0人');
   });

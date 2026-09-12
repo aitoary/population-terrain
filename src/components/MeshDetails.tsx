@@ -1,6 +1,7 @@
 import { changeCategory, CHANGE_STYLES, changeRate, formatChangeRate, formatPopulation, populationDifference } from '../domain/population';
 import type { MeshFeature, Year } from '../domain/types';
 import { PopulationTrendChart } from './PopulationTrendChart';
+import { ShareLink } from './ShareLink';
 export function MeshDetails({ features, selectedId, year, onSelect }: {
   features: readonly MeshFeature[]; selectedId: string; year: Year; onSelect: (id: string) => void;
 }) {
@@ -25,5 +26,6 @@ export function MeshDetails({ features, selectedId, year, onSelect }: {
       <PopulationTrendChart population={feature.properties.population} year={year} />
     </> : <p>人口データの読込後に数値を表示します。</p>}
     <p className="note">駅自体や建物別の人口ではなく、500mセル全体の人口です。正の0.1人未満は「0.1人未満」と表示し、計算には丸め前の値を使います。</p>
+    <ShareLink key={`${year}:${selectedId}`} disabled={!feature} />
   </section>;
 }

@@ -38,6 +38,7 @@ describe('T09/T10 props-only accessible UI', () => {
     const loaded = renderToStaticMarkup(<MeshDetails features={[feature(100, 0)]} selectedId="test" year={2070} onSelect={() => {}} />);
     expect(loaded).toContain('data-testid="population-trend" data-year="2070"');
     expect(loaded.indexOf('</dl>')).toBeLessThan(loaded.indexOf('data-testid="population-trend"'));
+    expect(loaded.match(/>この表示をコピー<\/button>/g)).toHaveLength(1);
   });
   it('renders independent visibility and opacity controls', () => {
     const html = renderToStaticMarkup(<LayerControls layers={{ population: true, border: false, buildings: true }} opacity={0.25} onVisibility={() => {}} onOpacity={() => {}} />);
