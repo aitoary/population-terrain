@@ -90,6 +90,8 @@ npm run build
 # 通常本番: 公開UIのみ。?acceptance=1 でも検査用オブジェクトを公開しない
 npm run build
 npm run test:browser -- preview --stage mvp
+npm run test:share # 通常本番でURL復元・実クリップボード・初期化再試行を検証
+SHARE_DEV=1 npm run test:share # devのStrictMode・非同期読込でも同じ検査
 npm run test:headers # 有限のローカル Workers Static Assets（Viteではない）
 
 # 詳細受入: 専用モードのみ。dist-acceptance は絶対にデプロイしない
@@ -106,6 +108,8 @@ npm run build
 既定の実行ファイルは `/Applications/Google Chrome.app/Contents/MacOS/Google Chrome`。必要なら `CHROME_PATH` 環境変数で変更します。ブラウザーの自動ダウンロードは行いません。`artifacts/` にHTTP・WebGL・実測B/L・スクリーンショット・cleanup記録を出力します。現在は `--stage mvp` を指定してください（通常モードは公開UI、`BROWSER_ACCEPTANCE=1` の既定suiteは全11年）。`MVP_FOCUS` は `all` / `station-coast` / `slope` / `low-population` / `zero`、`MVP_FAULT` は `population` / `terrain` / `buildings` / `border`。全12実行のコマンドは [検証手順](docs/verification.md#再実行) に記載。`base/map/cells` は過去版の検証用です。
 
 Zed Agentのsandboxがlocalhost待受を拒否する場合、有限時間のブラウザーテストに対する実行許可が必要です。npmキャッシュが書込不可なら、`npm --cache .npm-cache ci` を使えます。グローバル設定や所有者の変更は不要です。
+
+共有リンクのPlaywrightテストは1 worker・全体300秒上限で、専用のローカルポート（preview: 4174 / dev: 5174）と一時Chromeプロファイルを使います。人口データは実ファイル、地形・建物・地図は実配信を使い、遅延・人口503・Clipboard API拒否/非対応・Canvas初期化失敗だけをテスト内で注入します。`artifacts/browser-share-links-{preview,dev}.json` と `artifacts/share-links-{preview,dev}/` に結果・スクリーンショットを出力します。
 
 `npm run data:verify` は既存の `data/raw/` の固定原本と公開出力を読むだけです。再取得や出力更新をせず、全7,612値・692形状・市境・metadataを照合します。通常起動には原本もPythonも不要です。
 

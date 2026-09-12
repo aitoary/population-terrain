@@ -238,8 +238,9 @@ export async function checkMvp({ page, report, root, artifactDirectory, remainin
     await page.locator('#mesh-select').selectOption(id === '594137654' ? '594137753' : '594137654');
     await page.mouse.click(point.x, point.y);
     await page.waitForFunction((id) => document.querySelector('#mesh-select').value === id, id, { timeout: remaining(5000) });
+    await page.waitForURL((url) => url.searchParams.get('mesh') === id && url.searchParams.get('year') === (label === 'zero' ? '2070' : '2050'), { timeout: remaining(5000) });
   }
-  report.checks.push({ name: 'selected-camera-real-drillPick-and-pointer-selection', focus: process.env.MVP_FOCUS ?? 'all-four', passed: true });
+  report.checks.push({ name: 'selected-camera-real-drillPick-and-pointer-selection-and-shared-url', focus: process.env.MVP_FOCUS ?? 'all-four', passed: true });
   await page.getByText('データについて・利用条件', { exact: true }).evaluate((summary) => summary.click());
   ensure((await page.locator('#data-notes').innerText()).includes('無居住化'), 'Data notes readable');
   report.checks.push({ name: 'source-license-coverage-notes-readable', passed: true });

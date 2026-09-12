@@ -12,6 +12,7 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:browser": "node scripts/browser_smoke.mjs",
+    "test:share": "playwright test --config playwright.share.config.mjs",
     "test:headers": "node scripts/check_headers.mjs",
     "data:acquire": "python3 scripts/acquire_data.py",
     "data:prepare": ".venv/bin/python scripts/prepare_population.py",
