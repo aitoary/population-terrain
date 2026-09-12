@@ -7,6 +7,7 @@ const station = '594137654';
 const slope = '594137753';
 const zero = '594115541';
 const copyButton = (page) => page.getByRole('button', { name: 'この表示をコピー', exact: true });
+const playbackButton = (page) => page.getByTestId('playback-toggle');
 
 async function expectView(page, year, meshId) {
   await expect(page.getByTestId('data-status')).toHaveAttribute('data-state', 'ready');
@@ -78,6 +79,70 @@ test('restores a zero mesh, updates without history growth, and copies a reusabl
   for (const label of ['人口', '建物（2025年度 LOD1）', '市境']) {
     await expect(page.getByRole('checkbox', { name: label, exact: true })).toBeChecked();
   }
+});
+
+test('plays from the current year, stops for manual input and at 2070, and preserves the view', async ({ page }) => {
+  const populationRequests = [];
+  page.on('request', (request) => {
+    if (/\/data\/(miyako-population\.geojson|data-meta\.json)$/.test(request.url())) populationRequests.push(request.url());
+  });
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.addInitScript(() => history.replaceState({ retained: 'playback-test' }, ''));
+  await page.goto(`/?year=2020&mesh=${slope}`);
+  await expectView(page, 2020, slope);
+  await expect(playbackButton(page)).toHaveAttribute('aria-pressed', 'false');
+  await expect(playbackButton(page)).toHaveAccessibleName('人口推移を再生（停止中）');
+  await expect(page.getByTestId('playback-status')).toHaveText('停止中');
+  await page.waitForTimeout(1100);
+  await expect(page.locator('#population-year')).toHaveValue('2020');
+
+  await expect(page.getByTestId('map-viewport')).toHaveAttribute('data-viewer-ready', 'true');
+  const historyLength = await page.evaluate(() => {
+    window.__playbackCanvas = document.querySelector('[data-testid="map-viewport"] canvas');
+    return history.length;
+  });
+
+  await playbackButton(page).click();
+  await expect(playbackButton(page)).toHaveAccessibleName('人口推移を一時停止（再生中）');
+  await expect(page.getByTestId('playback-status')).toHaveText('再生中');
+  await expect(page.locator('#population-year')).toHaveValue('2025', { timeout: 2_000 });
+  await playbackButton(page).click();
+  await expectView(page, 2025, slope);
+  await expect(page.getByTestId('playback-status')).toHaveText('停止中');
+
+  await playbackButton(page).click();
+  await page.locator('#population-year').fill('2040');
+  await expectView(page, 2040, slope);
+  await expect(page.getByTestId('playback-status')).toHaveText('停止中');
+  await page.waitForTimeout(1100);
+  await expect(page.locator('#population-year')).toHaveValue('2040');
+
+  await playbackButton(page).click();
+  await expect(page.locator('#population-year')).toHaveValue('2045', { timeout: 2_000 });
+  await page.locator('#population-year').focus();
+  await page.keyboard.press('ArrowRight');
+  await expectView(page, 2050, slope);
+  await expect(page.getByTestId('playback-status')).toHaveText('停止中');
+  await page.waitForTimeout(1100);
+  await expect(page.locator('#population-year')).toHaveValue('2050');
+
+  await page.locator('#mesh-select').selectOption(zero);
+  await page.getByRole('checkbox', { name: '市境', exact: true }).uncheck();
+  await page.locator('#population-year').fill('2065');
+  await playbackButton(page).click();
+  await expectView(page, 2070, zero);
+  await expect(page.getByTestId('playback-status')).toHaveText('停止中（最終年）');
+  await expect(playbackButton(page)).toBeDisabled();
+  await expect(playbackButton(page)).toHaveAttribute('aria-pressed', 'false');
+  await page.waitForTimeout(1100);
+  await expect(page.locator('#population-year')).toHaveValue('2070');
+  await expect(page.locator('#mesh-select')).toHaveValue(zero);
+  await expect(page.getByRole('checkbox', { name: '市境', exact: true })).not.toBeChecked();
+  expect(await page.evaluate(() => history.length)).toBe(historyLength);
+  expect(await page.evaluate(() => history.state)).toEqual({ retained: 'playback-test' });
+  expect(await page.evaluate(() => window.__playbackCanvas === document.querySelector('[data-testid="map-viewport"] canvas'))).toBe(true);
+  expect(populationRequests.filter((url) => url.endsWith('/miyako-population.geojson'))).toHaveLength(1);
+  expect(populationRequests.filter((url) => url.endsWith('/data-meta.json'))).toHaveLength(1);
 });
 
 test('falls back independently for missing, invalid and repeated parameters', async ({ page }) => {

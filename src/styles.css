@@ -42,9 +42,13 @@ h2 { font-size: 18px; margin: 0 0 8px; }
 .totals span { font-size: 22px; font-weight: 650; }
 .totals small { color: #526873; }
 .year-control { background: #fff; padding: 10px 24px 14px; border-bottom: 1px solid #ccd6da; }
+.year-control-heading { display: flex; align-items: center; justify-content: space-between; gap: 20px; }
 .year-control label { display: flex; gap: 12px; align-items: baseline; font-size: 13px; }
 .year-control strong { font-size: 21px; }
 .year-control input { width: 100%; accent-color: #125d70; }
+.playback-controls { display: flex; align-items: center; gap: 9px; flex: 0 0 auto; }
+.playback-button { min-width: 80px; }
+.playback-status { min-width: 92px; color: #526873; font-size: 12px; }
 .year-ticks { display: flex; justify-content: space-between; font-size: 11px; color: #526873; }
 .map-tools { position: absolute; top: 12px; left: 12px; max-width: calc(100% - 350px); pointer-events: none; font-size: 11px; }
 .map-tools > * { pointer-events: auto; }

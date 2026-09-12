@@ -1,6 +1,6 @@
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
-import { YearControl } from './YearControl';
+import { nextPopulationYear, PLAYBACK_INTERVAL_MS, YearControl } from './YearControl';
 import { LayerControls } from './LayerControls';
 import { MeshDetails } from './MeshDetails';
 import { Legend } from './Legend';
@@ -14,6 +14,20 @@ describe('T09/T10 props-only accessible UI', () => {
   it.each(YEARS)('renders only the five-year range at %s', (year) => {
     const html = renderToStaticMarkup(<YearControl year={year} onChange={() => {}} />);
     expect(html).toContain('min="2020"'); expect(html).toContain('max="2070"'); expect(html).toContain('step="5"'); expect(html).toContain(`value="${year}"`);
+  });
+  it('renders playback stopped with an accessible label and no automatic start', () => {
+    const html = renderToStaticMarkup(<YearControl year={2050} onChange={() => {}} />);
+    expect(html).toContain('aria-label="人口推移を再生（停止中）"');
+    expect(html).toContain('aria-pressed="false"');
+    expect(html).toContain('role="status"');
+    expect(html).toContain('>停止中</span>');
+  });
+  it('advances every 900ms through the fixed years and stops at 2070', () => {
+    expect(PLAYBACK_INTERVAL_MS).toBe(900);
+    expect(YEARS.map(nextPopulationYear)).toEqual([...YEARS.slice(1), null]);
+    const html = renderToStaticMarkup(<YearControl year={2070} onChange={() => {}} />);
+    expect(html).toContain('aria-label="人口推移を再生（2070年で停止中）"');
+    expect(html).toContain('disabled=""');
   });
   it.each([[100, 0, '0人（平面）'], [0, 50, '算出不可（基準人口0）'], [100, null, 'データなし'], [100, 0.01, '0.1人未満']] as const)('labels baseline %s / future %s honestly', (baseline, value, text) => {
     expect(renderToStaticMarkup(<MeshDetails features={[feature(baseline, value)]} selectedId="test" year={2050} onSelect={() => {}} />)).toContain(text);
