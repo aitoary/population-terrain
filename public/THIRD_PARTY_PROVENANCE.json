@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "lockSha256": "a742b20e86bb2299f513292d59d3c854da4c0da55ff56a0fb3fcf4cf3759a8e5",
+  "lockSha256": "6105eeb762e30dbe32eb3b454e1e730d4492c86f7ed26e38eec7067d24f5dbe2",
   "packages": [
     {
       "name": "@cesium/engine",
