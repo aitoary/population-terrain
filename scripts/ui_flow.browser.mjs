@@ -66,6 +66,17 @@ function expectOverlayBounds(bounds) {
   expect(bounds.legend.bottom).toBeLessThan(bounds.footer.top);
 }
 
+async function expectCenteredPlaceNames(page) {
+  const offsets = await page.locator('.featured-select').evaluateAll((buttons) => buttons.map((button) => {
+    const bounds = button.getBoundingClientRect();
+    const range = document.createRange();
+    range.selectNodeContents(button.lastElementChild);
+    const label = range.getBoundingClientRect();
+    return Math.abs((label.left + label.right) / 2 - (bounds.left + bounds.right) / 2);
+  }));
+  for (const offset of offsets) expect(offset).toBeLessThanOrEqual(0.5);
+}
+
 for (const [width, height] of [[1366, 768], [1024, 768], [390, 844], [320, 740]]) {
   test(`compact layout, disclosure persistence and featured selection at ${width}x${height}`, async ({ page }, testInfo) => {
     await page.setViewportSize({ width, height });
@@ -81,6 +92,7 @@ for (const [width, height] of [[1366, 768], [1024, 768], [390, 844], [320, 740]]
     await expect(page.locator('.mesh-summary dt')).toHaveText(['2050年 人口', '2020年比']);
     await expect(page.locator('#mesh-heading')).toHaveText('選択地点');
     await expect(page.locator('.featured-select')).toHaveText(['中心部周辺', '市内北側', '内陸西部']);
+    await expectCenteredPlaceNames(page);
     await expect(page.getByRole('button', { name: /コピー/ })).toHaveCount(1);
     const initial = await layout(page);
     const panelScrolls = await panel(page).evaluate((element) => getComputedStyle(element).overflowY === 'auto');
@@ -122,6 +134,7 @@ for (const [width, height] of [[1366, 768], [1024, 768], [390, 844], [320, 740]]
     await expectView(page, 2070, featured);
     await expect(page.locator('#mesh-heading')).toHaveText('中心部周辺');
     await expect(choice(page)).toContainText('✓');
+    await expectCenteredPlaceNames(page);
     await expect(page.locator('.mesh-more')).not.toHaveAttribute('open', '');
     await expect(page.locator('#mesh-heading')).toBeFocused();
     await expect(play(page)).toHaveAccessibleName('2020年から再生');
