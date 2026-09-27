@@ -23,13 +23,16 @@ export default defineConfig(({ mode }) => ({
       },
     },
     viteStaticCopy({
-      targets: ['Workers', 'Assets', 'ThirdParty', 'Widgets'].map((directory) => ({
-        // 除外済み画像だけを省けるよう、コピー対象をファイル単位で照合する。
-                src: [`${cesiumSource}/${directory}/**/*`, ...excludedAssets.map((file) => `!${cesiumSource}/${file}`)],
-        dest: cesiumBaseUrl,
-        // static-copy v4は元のパス接頭辞を残すため、Cesium以下だけが配布されるよう削る。
-        rename: { stripBase: cesiumSource.split('/').length },
-      })),
+      targets: [
+        { src: 'docs/population-terrain-architecture.html', dest: 'docs', rename: { stripBase: 1 } },
+        ...['Workers', 'Assets', 'ThirdParty', 'Widgets'].map((directory) => ({
+          // 除外済み画像だけを省けるよう、コピー対象をファイル単位で照合する。
+          src: [`${cesiumSource}/${directory}/**/*`, ...excludedAssets.map((file) => `!${cesiumSource}/${file}`)],
+          dest: cesiumBaseUrl,
+          // static-copy v4は元のパス接頭辞を残すため、Cesium以下だけが配布されるよう削る。
+          rename: { stripBase: cesiumSource.split('/').length },
+        })),
+      ],
     }),
   ],
   define: { CESIUM_BASE_URL: JSON.stringify(`/${cesiumBaseUrl}/`), __ACCEPTANCE__: mode === 'acceptance' },
