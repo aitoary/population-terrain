@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Acquire and pin official inputs. Never publish originals or silently adopt revisions."""
+"""公式原本を取得して固定する。原本は公開せず、改訂も無確認で採用しない。"""
 from __future__ import annotations
 
 import argparse
@@ -178,7 +178,7 @@ def acquire(refresh: bool) -> dict:
             expect(f"{key}.cors", records[key]["accessControlAllowOrigin"], "*")
         index_path = download("indexMap", INDEX_URL, "03202_indexmap_op.pdf", 2025, PLATEAU_LICENSE)
         checked(index_path.read_bytes().startswith(b"%PDF"), "Index map is not PDF")
-        # The related archive has no hash in the plan. Once pinned, a change needs review.
+        # 関連ZIPのハッシュは当初計画にないため、一度固定した後の変更は確認を要する。
         for change in report["hashChanges"]:
             if change["source"] == "related":
                 report["specDifferences"].append({"field": "related.sha256", **change})

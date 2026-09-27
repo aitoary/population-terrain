@@ -4,7 +4,7 @@ import { readFile, readdir, writeFile } from 'node:fs/promises';
 import { createServer } from 'node:net';
 import { setTimeout as sleep } from 'node:timers/promises';
 
-// Local workerd only. Own the process group, bound requests/runtime, and never authenticate.
+// ローカルのworkerdだけを対象にし、起動したプロセス群と実行時間を管理する。認証は行わない。
 const origin = 'http://127.0.0.1:8787';
 const probe = createServer();
 await new Promise((resolve, reject) => { probe.once('error', reject); probe.listen(8787, '127.0.0.1', resolve); });
@@ -24,7 +24,7 @@ const timer = setTimeout(() => signalGroup('SIGKILL'), 120000);
 try {
   let ready = false;
   while (Date.now() < deadline && child.exitCode === null) {
-    try { const response = await fetch(origin, { signal: AbortSignal.timeout(1000) }); if (response.ok) { ready = true; break; } } catch { /* Wait for local workerd startup. */ }
+    try { const response = await fetch(origin, { signal: AbortSignal.timeout(1000) }); if (response.ok) { ready = true; break; } } catch { /* ローカルworkerdの起動を待つ。 */ }
     await sleep(250);
   }
   assert(ready, `Local Workers startup failed: ${logs}`);

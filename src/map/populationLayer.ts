@@ -14,7 +14,7 @@ export type InspectionRow = {
 
 export type PopulationLayer = ReturnType<typeof buildPopulationLayer>;
 
-/** Geometry and sampled bases survive year changes; all values are constant between updates. */
+/** 年を切り替えても、メッシュ形状とサンプリング済みの地形基準高を再利用する。 */
 export function buildPopulationLayer(
   features: readonly MeshFeature[],
   bases: ReadonlyMap<string, TerrainBaseResult>,
@@ -29,7 +29,7 @@ export function buildPopulationLayer(
     const terrain = bases.get(feature.id);
     const population = feature.properties.population[year];
     rows.push({ feature, terrain, length: populationHeight(population) });
-    // No ellipsoid-zero fallback. Values remain in the inspector even when geometry cannot be placed.
+    // 地形高がなければ柱を置かない。楕円体高0を代用せず、人口値だけ詳細に残す。
     if (!terrain || terrain.status === 'error') continue;
     const dimensions = columnDimensions(terrain.baseHeight, population);
     const category = changeCategory(changeRate(feature.properties.population[2020], population));
@@ -53,7 +53,7 @@ export function buildPopulationLayer(
         closeTop: true,
         closeBottom: true,
       },
-      // A real zero still has a pickable footprint. Missing population is separately labelled.
+      // 実際の0人にも選択可能な底面を残し、欠損値とは表示上も区別する。
       polyline: { positions: perimeter, width: 2, material: color.withAlpha(0.9), clampToGround: false },
     });
   }
@@ -77,6 +77,7 @@ export function buildPopulationLayer(
     }
     return {
       source, rows,
+      // 年変更ではEntityを増減させず、柱の高さと表示属性だけを差し替える。
       setYear(next: Year) {
         if (!YEARS.includes(next)) throw new RangeError('Unsupported population year');
         if (next === year) return;

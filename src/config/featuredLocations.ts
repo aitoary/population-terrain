@@ -1,5 +1,5 @@
-// Curated from all 692 pinned PTN meshes. Values come from the loaded dataset;
-// selection rationale, coordinates and all 11 source values: docs/featured-locations.md.
+// 注目地点の選定根拠・座標・全11時点の値は docs/featured-locations.md に記録する。
+// ここには、読み込み済みデータから表示する地点IDとUI文言だけを持たせる。
 export const FEATURED_YEAR = 2070;
 export const FEATURED_LOCATIONS = [
   {

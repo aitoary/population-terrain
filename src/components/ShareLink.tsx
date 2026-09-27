@@ -14,7 +14,7 @@ export function ShareLink({ disabled, view, label = 'この表示をコピー', 
       await navigator.clipboard.writeText(url);
       setStatus('success');
     } catch {
-      // Includes denied permission and browsers without the Clipboard API.
+      // クリップボードAPIが使えない環境や権限拒否でも、共有URLを渡せるようにする。
       setManualUrl(url);
       setStatus('error');
     }

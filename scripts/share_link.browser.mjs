@@ -36,7 +36,7 @@ test('restores a zero mesh, updates without history growth, and copies a reusabl
   await expectView(page, 2070, zero);
   await expect(page.locator('.mesh-summary .current-population')).toHaveText('0人');
   await expectRealMap(page);
-  await page.waitForTimeout(1500); // Let the real map submit its initial render for the screenshot.
+  await page.waitForTimeout(1500); // 実際の地図が初回描画を送るまで待ち、スクリーンショットを撮る。
   await page.screenshot({ path: testInfo.outputPath('restored-2070-zero.png') });
   const historyLength = await page.evaluate(() => {
     window.__shareCanvas = document.querySelector('[data-testid="map-viewport"] canvas');
@@ -60,7 +60,7 @@ test('restores a zero mesh, updates without history growth, and copies a reusabl
   }
   await page.getByRole('button', { name: '宮古駅周辺', exact: true }).click();
   expect(page.url()).toBe(url);
-  await page.locator('#mesh-select').selectOption(zero); // Selection still works with population hidden.
+  await page.locator('#mesh-select').selectOption(zero); // 人口を非表示にしてもメッシュを選べる。
   await expectView(page, 2065, zero);
   expect(await page.evaluate(() => history.length)).toBe(historyLength);
   expect(await page.evaluate(() => history.state)).toEqual({ retained: 'share-link-test' });
@@ -74,7 +74,7 @@ test('restores a zero mesh, updates without history growth, and copies a reusabl
   expect(copied).toBe(page.url());
   expect([...new URL(copied).searchParams.keys()].sort()).toEqual(['mesh', 'source', 'year']);
   expect(new URL(copied).hash).toBe('#view');
-  // Navigating to the same hash URL can be a same-document navigation in Chromium.
+  // Chromiumでは同じハッシュ付きURLへの移動が、同一文書内の遷移になる場合がある。
   await page.goto('about:blank');
   await page.goto(copied);
   await expectView(page, 2065, zero);
@@ -110,8 +110,8 @@ test('plays from the current year, stops for manual input and at 2070, and prese
   await expect(page.getByTestId('playback-status')).toHaveText('再生中');
   await expect(page.locator('#population-year')).toHaveValue('2025', { timeout: 2_000 });
   await playbackButton(page).click();
-  // Real Chrome actionability checks can span another 900ms playback tick.
-  // Assert the actual paused year stays fixed rather than racing the click.
+  // Chromeのクリック可能判定中に900msの再生間隔をまたぐ場合がある。
+  // クリックとの競合を避け、実際に停止した年が変わらないことを確認する。
   const pausedYear = Number(await page.locator('#population-year').inputValue());
   expect(metadata.years).toContain(pausedYear);
   expect(pausedYear).toBeGreaterThanOrEqual(2025);

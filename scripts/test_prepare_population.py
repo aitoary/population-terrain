@@ -1,4 +1,4 @@
-"""Unit-only mutations of a real feature; these fixtures are never shipped to the app."""
+"""実在Featureを単体テスト用に改変する。これらのデータはアプリへ配布しない。"""
 
 import copy
 import json

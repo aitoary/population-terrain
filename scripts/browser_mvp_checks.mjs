@@ -60,7 +60,7 @@ export async function checkRenderError(page, report, remaining) {
 }
 
 export async function waitMvpRendered(page, remaining) {
-  // First submit the new camera/property state: pre-frame tilesLoaded can describe the OLD view.
+  // 新しい視点と属性を先に描画へ反映する。描画前のtilesLoadedは古い視点を示し得る。
   await page.evaluate(() => new Promise((resolve) => {
     delete window.__mvpStableSince;
     const scene = window.__mvp.viewer.scene;
@@ -152,7 +152,7 @@ export async function checkMvp({ page, report, root, artifactDirectory, remainin
   const zero = source.features.find((f) => f.properties.population[2070] === 0);
   if (!process.env.MVP_FOCUS) {
     await page.locator('#population-year').fill('2070');
-    // Native range keyboard behavior; no annual interpolation.
+    // 年単位の補間はせず、range入力の標準的なキーボード操作を確認する。
     await page.locator('#population-year').focus(); await page.keyboard.press('ArrowLeft');
     ensure(await page.locator('#population-year').inputValue() === '2065', 'Keyboard five-year step');
     await page.keyboard.press('ArrowRight');
@@ -215,7 +215,7 @@ export async function checkMvp({ page, report, root, artifactDirectory, remainin
     await take(label);
     report.mvp.phase = `picking-${label}`;
     console.log('MVP focus screenshot ready, picking', label);
-    // Actual drillPick at a projected face centroid, then a real pointer click.
+    // 画面へ投影した面の中心で実際にdrillPickし、その位置をポインターでクリックする。
     const point = await page.evaluate((id) => {
       const { viewer, layer } = window.__mvp;
       const entity = layer.source.entities.getById(`mesh:${id}`);

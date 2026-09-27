@@ -270,9 +270,8 @@ async function main({ mode, stage }) {
     if (process.platform === 'win32') {
       return child.exitCode === null && child.signalCode === null ? [{ pid: child.pid }] : [];
     }
-    // kill(-pgid, 0) is a permission probe, not a reliable process listing.
-    // Inspect the detached group even after its leader exits, so descendants
-    // are cleaned up without mistaking stale ChildProcess exit fields for life.
+    // kill(-pgid, 0)は権限確認にも使われるため、生存プロセスの確実な一覧にはならない。
+    // 親が終了した後も切り離したプロセス群を調べ、古いChildProcessの終了情報に頼らず子を片付ける。
     const output = execFileSync('ps', ['-axo', 'pid=,pgid=,uid='], {
       encoding: 'utf8', timeout: 1_000, maxBuffer: 4 * 1024 * 1024,
       stdio: ['ignore', 'pipe', 'pipe'],
@@ -291,8 +290,8 @@ async function main({ mode, stage }) {
     return ownedGroupMembers(child).length > 0;
   }
 
-  // Only these detached ChildProcess handles establish ownership, never a port
-  // or executable-name search. A vanished group must not receive another signal.
+  // 所有の根拠はここで作ったChildProcessだけとし、ポートや実行名では対象を探さない。
+  // 消滅したプロセス群へ再度シグナルを送らない。
   function signalOwnedProcess(child, processSignal) {
     if (!processGroupAlive(child)) return;
     try {
@@ -326,16 +325,16 @@ async function main({ mode, stage }) {
     report.timedOut = true;
     abort(timeoutError(`The ${mode} run exceeded its 120-second deadline.`));
   }, RUN_TIMEOUT_MS);
-  // Final backstop also covers a stalled launch/close or filesystem operation.
+  // 起動・終了やファイル操作が止まった場合も、最後の期限で処理を打ち切る。
   const hardTimer = setTimeout(() => {
     for (const child of [browserProcess, viteProcess]) {
-      try { signalOwnedProcess(child, 'SIGKILL'); } catch { /* Continue stopping other owned processes. */ }
+      try { signalOwnedProcess(child, 'SIGKILL'); } catch { /* 他の所有プロセスの停止を続ける。 */ }
     }
     fail('cleanup-timeout', timeoutError('Run plus cleanup exceeded 135 seconds; forced termination.'));
     report.status = 'failed';
     report.finishedAt = new Date().toISOString();
     report.durationMs = elapsed();
-    try { writeFileSync(jsonPath, `${JSON.stringify(report, null, 2)}\n`); } catch { /* Output may be unavailable. */ }
+    try { writeFileSync(jsonPath, `${JSON.stringify(report, null, 2)}\n`); } catch { /* 出力先を使えない場合がある。 */ }
     console.error(`Browser smoke failed: deadline/cleanup timeout. Report: ${relativePath(jsonPath)}`);
     process.exit(1);
   }, RUN_TIMEOUT_MS + CLEANUP_TIMEOUT_MS);
@@ -401,8 +400,8 @@ async function main({ mode, stage }) {
         lastResult = `HTTP ${response.status}`;
         await response.body?.cancel();
         if (response.status === 200) {
-          // Vite can style just the port, and escape sequences can span chunks.
-          // Normalize the accumulated child output, retaining raw logs as evidence.
+          // Viteはポート番号だけに色を付け、エスケープ列が出力片をまたぐ場合がある。
+          // 生ログは証拠として残し、判定には結合後の出力を正規化して使う。
           const announced = stripVTControlCharacters(`${report.server.stdout}\n${report.server.stderr}`);
           if (announced.includes(`${origin}/`)) {
             remaining();
@@ -457,8 +456,8 @@ async function main({ mode, stage }) {
       const row = recordRequest(request);
       const errorText = request.failure()?.errorText ?? 'Unknown request failure';
       const policy = blockedRequests.get(request);
-      // Cesium cancels superseded tile/image fetches during camera changes. Do not
-      // exempt document/script/stylesheet failures, or generic ERR_FAILED errors.
+      // Cesiumは視点変更で不要になったタイルや画像の取得を中断する。
+      // 文書・スクリプト・スタイルの失敗や一般的なERR_FAILEDは除外しない。
       const tileAbort = errorText === 'net::ERR_ABORTED' &&
         ['fetch', 'xhr', 'image'].includes(request.resourceType());
       const reason = cleaningUp ? 'cleanup' : policy ? 'blocked-by-smoke-policy' :
@@ -476,8 +475,8 @@ async function main({ mode, stage }) {
         const location = message.location();
         const type = message.type();
         const text = message.text();
-        // Only Chrome's resource-error log for the currently injected URL is
-        // expected. App exceptions, other URLs/statuses, and retry failures are not.
+        // 想定するのは現在注入したURLに対するChromeのリソースエラーだけ。
+        // アプリの例外、他のURLや状態、再試行の失敗は見逃さない。
         const expected = type === 'error' && /^Failed to load resource: the server responded with a status of 503(?: \([^)]*\))?$/.test(text) &&
           ((injectTerrainFailure && report.terrainFailure.injectedRequestIds.length > 0 && location.url === TERRAIN_METADATA_URL) ||
            (injectedMvpRequests.size > 0 && location.url === mvpFaultUrl));
@@ -489,8 +488,7 @@ async function main({ mode, stage }) {
             relatedRequestIds: checkTerrainFailure ? [...report.terrainFailure.injectedRequestIds] : [...injectedMvpRequests].map((request) => recordRequest(request).id),
           } : {}),
         });
-        // Preserve normal-mode recording semantics; the opt-in fault regression
-        // additionally rejects unrelated console errors instead of masking them.
+        // 通常モードの記録方法を保ち、障害注入テストでは無関係なコンソールエラーも検出する。
         if ((checkTerrainFailure || mvpFault) && !cleaningUp && type === 'error' && !expected) {
           fail('consoleerror', new Error(text), { url: redact(location.url) });
         }
@@ -507,8 +505,8 @@ async function main({ mode, stage }) {
 
   async function launchChrome(chromium) {
     remaining();
-    // launchServer creates a fresh temporary userDataDir and exposes its owned
-    // ChildProcess for bounded force-kill cleanup, unlike launchPersistentContext.
+    // launchServerは新しい一時userDataDirと所有するChildProcessを提供するため、
+    // launchPersistentContextと違って期限付きの強制終了で片付けられる。
     launchPromise = chromium.launchServer({
       executablePath,
       headless: true,
@@ -726,8 +724,8 @@ async function main({ mode, stage }) {
 
     const retry = page.getByTestId('terrain-status').getByRole('button', { name: '地形を再試行', exact: true });
     await retry.waitFor({ state: 'visible', timeout: remaining() });
-    // Keep the existing route; only this flag changes, so buildings/population
-    // remain real and the retry cannot accidentally inherit another mock route.
+    // 既存の通信経路は保ち、このフラグだけを変更する。建物と人口は実データのままにし、
+    // 再試行に別のモック経路が紛れ込まないようにする。
     injectTerrainFailure = false;
     report.terrainFailure.phase = 'retrying';
     report.terrainFailure.retryAtMs = elapsed();
@@ -790,7 +788,7 @@ async function main({ mode, stage }) {
         await Promise.all(STATIC_DIRECTORIES.map((directory) => access(path.join(candidate, directory), constants.R_OK)));
         sourceRoot = candidate;
         break;
-      } catch { /* Try the other installed distribution, not an invented filename. */ }
+      } catch { /* 架空のファイル名を作らず、別のインストール済み配布物を試す。 */ }
     }
     if (!sourceRoot) throw new Error('No installed Cesium build contains Workers/Assets/ThirdParty/Widgets.');
     const windowBase = await page.evaluate(() =>
@@ -857,7 +855,7 @@ async function main({ mode, stage }) {
   async function run() {
     await mkdir(artifactDirectory, { recursive: true });
     remaining();
-    // Do not leave an old successful screenshot beside a failed current report.
+    // 今回の失敗レポートに、前回成功時のスクリーンショットを残さない。
     await Promise.all([screenshotPath, ...(stage === 'cells' ? cellPaths : []),
       ...(checkTerrainFailure ? [terrainFailureScreenshotPath] : [])]
       .map((filename) => rm(filename, { force: true })));
@@ -1003,13 +1001,13 @@ async function main({ mode, stage }) {
     abort(new Error('Observation complete; shutting down owned resources.'));
     const cleanupTimer = setTimeout(() => {
       for (const child of [browserProcess, viteProcess]) {
-        try { signalOwnedProcess(child, 'SIGKILL'); } catch { /* The hard deadline will report failure. */ }
+        try { signalOwnedProcess(child, 'SIGKILL'); } catch { /* 最終期限側で失敗を報告する。 */ }
       }
       fail('cleanup-timeout', timeoutError('Cleanup exceeded its 15-second deadline.'));
       report.status = 'failed';
       report.finishedAt = new Date().toISOString();
       report.durationMs = elapsed();
-      try { writeFileSync(jsonPath, `${JSON.stringify(report, null, 2)}\n`); } catch { /* Best effort on forced exit. */ }
+      try { writeFileSync(jsonPath, `${JSON.stringify(report, null, 2)}\n`); } catch { /* 強制終了時の書き出しは可能な範囲で行う。 */ }
       process.exit(1);
     }, CLEANUP_TIMEOUT_MS);
     try {
@@ -1068,5 +1066,5 @@ try {
   if (error?.message?.includes('Mode must') || error?.message?.includes('option:') ||
       error?.message?.includes('Specify stage')) console.error(USAGE);
 }
-// Explicit exit bounds any remaining Playwright transport handles after cleanup.
+// 後片付け後にPlaywrightの通信ハンドルが残っても、明示的に終了して時間を制限する。
 process.exit(exitCode);

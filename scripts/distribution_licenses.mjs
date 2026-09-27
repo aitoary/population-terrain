@@ -24,8 +24,8 @@ function record(name, reason) {
   evidence.get(name).add(reason);
 }
 for (const module of modules) record(packageName(module), 'Rendered application chunk module');
-// The companion unminified distribution provides source labels for the prebuilt workers.
-// This is package provenance, not a claim that the current lock version built those workers.
+// 付属の非圧縮配布物から、ビルド済みWorkerの原典名を確認する。
+// パッケージの来歴を示すもので、現在のlock版でWorkerを再生成したとは主張しない。
 for (const directory of ['Workers', 'ThirdParty']) {
   for (const file of await files(`node_modules/cesium/Build/CesiumUnminified/${directory}`)) {
     if (!file.endsWith('.js')) continue;
@@ -46,7 +46,7 @@ for (const [name, reasons] of [...evidence].sort(([a], [b]) => a.localeCompare(b
   if (!licenseFiles.length) sections.push('\nNo standalone license file in installed package. See full Cesium license and supplemental source notices below.\n');
   packages.push({ name, version: pkg.version, metadataLicense: pkg.license, reasons: [...reasons], licenseFiles, integrity: lock.packages[root].integrity });
 }
-// Preserve actual source notices where npm's metadata is incomplete or misleading.
+// npmのメタデータが不完全または紛らわしい場合も、原典のライセンス表示を保持する。
 for (const file of ['node_modules/mersenne-twister/src/mersenne-twister.js', 'node_modules/urijs/src/punycode.js', 'node_modules/lerc/LercDecode.js']) {
   const source = await readFile(file, 'utf8');
   const comments = [...source.matchAll(/\/\*[\s\S]*?\*\//g)].map(([comment]) => comment).filter((comment) => /copyright|license|redistribution/i.test(comment));

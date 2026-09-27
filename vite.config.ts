@@ -4,7 +4,7 @@ import react from '@vitejs/plugin-react';
 import { viteStaticCopy } from 'vite-plugin-static-copy';
 import excludedAssets from './scripts/cesium-excluded-assets.json' with { type: 'json' };
 
-// Match Cesium's official Vite example; all four directories are needed in dist too.
+// Cesium公式のVite構成に合わせ、実行に必要な4ディレクトリを配布物へコピーする。
 const cesiumSource = 'node_modules/cesium/Build/Cesium';
 const cesiumBaseUrl = 'cesium';
 
@@ -24,10 +24,10 @@ export default defineConfig(({ mode }) => ({
     },
     viteStaticCopy({
       targets: ['Workers', 'Assets', 'ThirdParty', 'Widgets'].map((directory) => ({
-        // Match files individually so only the reviewed unused images are excluded.
+        // 除外済み画像だけを省けるよう、コピー対象をファイル単位で照合する。
                 src: [`${cesiumSource}/${directory}/**/*`, ...excludedAssets.map((file) => `!${cesiumSource}/${file}`)],
         dest: cesiumBaseUrl,
-        // static-copy v4 preserves the source prefix; keep only the Cesium subtree.
+        // static-copy v4は元のパス接頭辞を残すため、Cesium以下だけが配布されるよう削る。
         rename: { stripBase: cesiumSource.split('/').length },
       })),
     }),
@@ -36,7 +36,7 @@ export default defineConfig(({ mode }) => ({
   server: {
     host: '127.0.0.1',
     fs: {
-      // Retain Vite's sensitive-file exclusions and keep originals off the dev server too.
+      // Vite標準の機密ファイル除外を維持し、原本データも開発サーバーから公開しない。
       deny: ['.env', '.env.*', '*.{crt,pem,key,p12,pfx,cer,der}', '.npmrc', '.yarnrc.yml', '**/.git/**', '**/data/raw/**'],
     },
   },

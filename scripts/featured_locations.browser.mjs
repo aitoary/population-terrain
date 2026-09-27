@@ -142,7 +142,7 @@ test(`guides real mesh ${guideId}, stops playback and shares the destination`, a
       }
     }
     await page.screenshot({ path: testInfo.outputPath(`featured-${id}.png`) });
-    // Exercise the shared re-selection path once, after capturing the settled view.
+    // 視点が落ち着いた画面を記録した後、共通の再選択処理を1回確認する。
     if (id === ids[0]) {
       await page.getByRole('button', { name: '宮古駅周辺', exact: true }).click();
       await selectLocation(page, id).click();
@@ -234,7 +234,7 @@ test('retains an early location choice until the lazy map is ready', async ({ pa
     await expectView(page, 2070, id);
     await expect(page.getByText('3Dエンジンを読み込み中…')).toBeVisible();
   } finally { release(); }
-  // The western location may have no visible PLATEAU tiles; that is not a failure.
+  // 西側地点でPLATEAUタイルが見えない場合があるが、それ自体は失敗としない。
   await expectRealMap(page, false);
   await expectView(page, 2070, id);
   if (acceptance) {

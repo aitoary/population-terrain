@@ -35,7 +35,7 @@ export function YearControl({ year, onChange }: { year: Year; onChange: (year: Y
       return;
     }
     if (year !== previousYear) {
-      // A year that was not requested by this timer is a direct/manual change.
+      // タイマーが要求していない年への変更は、利用者の操作として再生を止める。
       if (year !== playbackYearRef.current) {
         playingRef.current = false;
         playbackYearRef.current = null;
@@ -80,10 +80,10 @@ export function YearControl({ year, onChange }: { year: Year; onChange: (year: Y
             if (playingRef.current) stopPlayback();
             else {
               playingRef.current = true;
-              // Restart the effect even if a rapid stop/start is batched into one render.
+              // 停止と再開が同じ描画にまとめられても、タイマーを再設定させる。
               setPlaybackStart((request) => request + 1);
               if (year === LAST_YEAR) {
-                // This explicit restart is a playback change, not a manual year change.
+                // 最終年からの巻き戻しは再生操作なので、手動変更として停止させない。
                 playbackYearRef.current = YEARS[0];
                 onChange(YEARS[0]);
               }

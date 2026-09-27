@@ -16,7 +16,7 @@ export function connectSelection(viewer: Viewer, source: CustomDataSource, onSel
   const handler = new ScreenSpaceEventHandler(viewer.scene.canvas);
   handler.setInputAction(({ position }: { position: Cartesian2 }) => {
     if (!source.show) return;
-    // Bound synchronous GPU readbacks in dense building stacks; the ID selector remains available.
+    // 建物が密集する場所で同期的なGPU読取を増やしすぎない。選択はID欄からもできる。
         const meshId = pickedMesh(viewer.scene.drillPick(position, 8), source);
     if (meshId) onSelect(meshId);
   }, ScreenSpaceEventType.LEFT_CLICK);

@@ -1,4 +1,4 @@
-// Selected from the pinned, real Miyako GeoJSON; not generated mesh codes or synthetic populations.
+// 固定済みの宮古市GeoJSONから選んだ実在メッシュ。IDや人口の架空値は使わない。
 export const INSPECTION_YEAR = 2050;
 export const SAMPLE_CELLS = [
   { meshId: '594137654', label: '宮古駅を含むセル' },

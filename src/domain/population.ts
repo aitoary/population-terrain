@@ -11,7 +11,7 @@ export type ChangeCategory =
   | 'increase'
   | 'unavailable';
 
-// The plan fixes the ranges and color families; these hex values are shared by map and legend.
+// 地図と凡例で同じ増減区分を示せるよう、色と表示名を一箇所で定義する。
 export const CHANGE_STYLES = {
   'large-decrease': { color: '#b91c1c', label: '減少（75%以上）' },
   decrease: { color: '#ea580c', label: '減少（50%以上75%未満）' },
@@ -51,7 +51,7 @@ export function columnDimensions(
   baseHeight: number,
   population: Population,
 ): { baseHeight: number; length: number; extrudedHeight: number } | null {
-  // Ellipsoidal heights may be negative; the non-negative constraint is for population only.
+  // 楕円体高は負にもなるため、非負の制約は人口にだけ適用する。
   assertFiniteNumber(baseHeight, 'baseHeight');
   const length = populationHeight(population);
   if (length === null) return null;
@@ -64,7 +64,7 @@ export function columnDimensions(
 }
 
 export function changeRate(baseline: Population, future: Population): number | null {
-  // Validate both inputs before an unavailable comparison can short-circuit.
+  // 算出不可として早期終了する場合も、不正な入力値は見逃さない。
   assertPopulation(baseline, 'baseline');
   assertPopulation(future, 'future');
   if (baseline === null || future === null || baseline === 0) return null;

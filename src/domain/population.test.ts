@@ -227,7 +227,7 @@ const invalidPopulations = [
 
 describe('defensive validation', () => {
   it.each(invalidPopulations)('rejects $name as population in every API', ({ value }) => {
-    // Deliberately bypass static types to exercise untrusted JavaScript/JSON inputs.
+    // 外部JavaScriptやJSONからの不正値を試すため、ここでは型検査を意図的に回避する。
     const invalid = value as Population;
     expect(() => populationHeight(invalid)).toThrow(/population/);
     expect(() => columnDimensions(12, invalid)).toThrow(/population/);
@@ -262,7 +262,7 @@ describe('defensive validation', () => {
 });
 
 describe('distributed PTN GeoJSON regressions', () => {
-  // Read the actual distribution file, independently of the loader being implemented by main.
+  // ローダーの実装に依存せず、実際の配布ファイルを読み込んで検証する。
   const collection = JSON.parse(readFileSync(
     new URL('../../public/data/miyako-population.geojson', import.meta.url),
     'utf8',

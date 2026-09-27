@@ -96,7 +96,7 @@ function connect() {
 }
 
 function createScene(onImageryError: (message: string) => void) {
-  // The mocked Viewer never reads the container, so no DOM shim is necessary.
+  // Viewerのモックはコンテナを参照しないため、DOMの代用品は不要。
   const container = {} as HTMLElement;
   const scene = createViewer(container, onImageryError);
   disposables.push(scene);
@@ -113,7 +113,7 @@ beforeEach(() => {
   vi.mocked(CesiumTerrainProvider.fromUrl).mockReset();
   viewer = createViewerStub();
   imagery = { errorEvent: createEvent<[unknown]>() };
-  // Constructor mocks must be constructable functions, not arrow functions.
+  // コンストラクターのモックにはnew可能な関数が必要。アロー関数は使えない。
   vi.mocked(Viewer).mockImplementation(function () { return viewer as unknown as Viewer; });
   vi.mocked(UrlTemplateImageryProvider).mockImplementation(function () {
     return imagery as unknown as UrlTemplateImageryProvider;
@@ -322,7 +322,7 @@ describe('connectTerrain', () => {
   });
 
   it.each(['resolve', 'reject'] as const)('aborts metadata and ignores its late %s after destroy', async (outcome) => {
-    // Deliberately ignore the abort in this fake to exercise the disposed guard too.
+    // 破棄済み判定も検証するため、このモックでは中断通知を意図的に無視する。
     const pending = deferred<Response>();
     fetchMock.mockReturnValueOnce(pending.promise);
     const initialProvider = viewer.terrainProvider;

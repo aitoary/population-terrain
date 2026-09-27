@@ -17,10 +17,10 @@ export function describeError(error: unknown): string {
 
 export function createViewer(container: HTMLElement, onImageryError: (message: string) => void) {
   const viewer = new Viewer(container, {
-    // Cesium's default error panel uses innerHTML; MapViewport reports errors as React text.
+    // Cesium標準のエラー画面はinnerHTMLを使うため、エラーはReactのテキストとして表示する。
     showRenderLoopErrors: false,
     baseLayer: false,
-    terrainProvider: new EllipsoidTerrainProvider(), // Bootstrap only, never used for population heights.
+    terrainProvider: new EllipsoidTerrainProvider(), // 初期化用。人口の柱の高さには使わない。
     baseLayerPicker: false,
     geocoder: false,
     animation: false,
@@ -34,12 +34,12 @@ export function createViewer(container: HTMLElement, onImageryError: (message: s
     shadows: false,
     contextOptions: { webgl: { antialias: false } },
     msaaSamples: 1,
-    // Avoid multi-target floating-point transparency passes on integrated/software GPUs.
+    // 統合GPUやソフトウェアGPUで高負荷になる複数描画先の半透明処理を避ける。
     orderIndependentTranslucency: false,
     requestRenderMode: true,
     maximumRenderTimeChange: Infinity,
   });
-  // Software GL otherwise queues terrain/transparent redraws faster than it can consume them.
+  // ソフトウェア描画では地形や半透明の再描画が処理能力を超えるため、解像度と頻度を抑える。
     const gl = viewer.scene.canvas?.getContext?.('webgl2');
     const debug = gl?.getExtension('WEBGL_debug_renderer_info');
     const software = debug && /SwiftShader|llvmpipe|software/i.test(String(gl!.getParameter(debug.UNMASKED_RENDERER_WEBGL)));
@@ -51,7 +51,7 @@ export function createViewer(container: HTMLElement, onImageryError: (message: s
     minimumLevel: DATA_SOURCES.imagery.minimumLevel,
     maximumLevel: DATA_SOURCES.imagery.maximumLevel,
     credit: new Credit(DATA_SOURCES.imagery.credit, true),
-    // Limit requests to the study region; this is a display envelope, not a city boundary.
+    // 画像の取得範囲を調査対象の周辺に限る。行政界を表す範囲ではない。
     rectangle: Rectangle.fromDegrees(141.25, 39.3, 142.15, 40.05),
   });
   viewer.imageryLayers.addImageryProvider(imagery);
@@ -94,8 +94,8 @@ export function connectTerrain(
     request = new AbortController();
     report({ status: 'loading', message: 'PLATEAU地形に接続中' });
     try {
-      // Cesium can interpret a missing layer.json as legacy heightmap terrain.
-      // Reject that fallback explicitly instead of calling it an empty landscape.
+      // layer.jsonがないとCesiumは旧式の地形形式と誤認する場合がある。
+      // 空の地形として扱わず、メタデータ不備を明示的にエラーにする。
       const response = await fetch(DATA_SOURCES.terrain.metadataUrl, {
         signal: AbortSignal.any([request.signal, AbortSignal.timeout(15000)]),
       });
@@ -118,7 +118,7 @@ export function connectTerrain(
       onProvider(provider);
       report({ status: 'loading', message: '地形・背景タイルの描画を待機中' });
       let stableSince: number | undefined;
-      // Metadata availability is not evidence of a rendered terrain surface.
+      // メタデータの取得だけでは地形が描画されたと判断できない。
       settledTimer = setInterval(() => {
         if (!viewer.scene.globe.tilesLoaded) { stableSince = undefined; return; }
         stableSince ??= performance.now();

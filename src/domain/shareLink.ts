@@ -6,7 +6,7 @@ export type SharedView = { year: Year; meshId: string };
 
 export function readSharedView(search: string): SharedView {
   const params = new URLSearchParams(search);
-  // Ambiguous repeated parameters fall back just like missing/invalid values.
+  // 同じパラメーターの重複は解釈が曖昧なため、欠落や不正値と同じく既定値へ戻す。
   const year = params.getAll('year').length === 1 ? params.get('year') : null;
   const meshId = params.getAll('mesh').length === 1 ? params.get('mesh') : null;
   return {

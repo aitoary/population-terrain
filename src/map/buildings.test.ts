@@ -47,7 +47,7 @@ function createTileset() {
     tilesLoaded: false,
     destroy: vi.fn(),
   };
-  // Only the Cesium boundary is cast; the event and ownership fakes remain typed.
+  // 型の変換はCesiumとの境界だけに限り、イベントと所有関係のモックは型付きで保つ。
   return {
     value: fake as unknown as Cesium3DTileset,
     tileFailed: fake.tileFailed,
@@ -72,7 +72,7 @@ function createViewerStub() {
         }),
         remove: vi.fn((tileset: Cesium3DTileset) => {
           if (!attached.delete(tileset)) return false;
-          // PrimitiveCollection owns and destroys removed primitives by default.
+          // PrimitiveCollectionは既定で削除したPrimitiveの破棄も担当する。
           tileset.destroy();
           return true;
         }),

@@ -95,7 +95,7 @@ button:disabled { opacity: .55; cursor: not-allowed; }
 .featured-locations { margin: 0 0 20px; }
 .featured-locations h2 { font-size: 14px; }
 .featured-list { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 5px; margin: 0; padding: 0; list-style: none; }
-/* Equal side tracks keep the place name centered, with or without a checkmark. */
+/* チェックマークの有無で地名がずれないよう、左右を同じ幅にする。 */
 .inspection-panel .featured-select { display: grid; grid-template-columns: 10px minmax(0, 1fr) 10px; align-items: center; width: 100%; min-height: 44px; padding: 6px 2px; text-align: center; white-space: nowrap; }
 .inspection-panel .featured-select[aria-pressed='true'] { background: #e9f1ee; border-color: #36766b; box-shadow: inset 0 0 0 1px #36766b; font-weight: 650; }
 .featured-select[aria-pressed='false']:hover:not(:disabled) { background: #edf4f6; }

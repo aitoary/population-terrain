@@ -19,7 +19,7 @@ export default function App() {
   const [opacity, setOpacity] = useState(0.25);
   const [layers, setLayers] = useState<LayerVisibility>({ buildings: true, population: true, border: true });
   const [data, setData] = useState<PopulationDataset | null>(null);
-  // Keep the requested ID pending until the dataset can validate it, even on retry.
+  // 共有URLのIDはデータ取得後に検証する。再試行中も指定値を失わない。
   const selectedId = resolveSharedMesh(view.meshId, data?.byId);
   const [error, setError] = useState<string | null>(null);
   const [attempt, setAttempt] = useState(0);
@@ -28,14 +28,14 @@ export default function App() {
   const detailsHeadingRef = useRef<HTMLHeadingElement>(null);
   function selectFeaturedLocation(meshId: string) {
     if (!data?.byId.has(meshId)) return;
-    // YearControl stops its timer on this external change to the final year.
+    // 注目地点への切替は手動操作なので、YearControl側の再生を止める。
     setView({ year: FEATURED_YEAR, meshId });
-    // A separate camera command also supports selecting the same location again.
+    // 同じ地点を再選択してもカメラを動かせるよう、選択値とは別に指示を送る。
     setSelectionFocusRequest((request) => request + 1);
     const panel = panelRef.current;
     const heading = detailsHeadingRef.current;
     if (!panel || !heading) return;
-    // Keep keyboard focus at the newly revealed content, without implicit page scrolling.
+    // 詳細へフォーカスを移す際、ブラウザーによるページ全体のスクロールを抑える。
     heading.focus({ preventScroll: true });
     const summary = panel.querySelector('.mesh-summary');
     const bounds = (summary ?? heading).getBoundingClientRect();
@@ -47,7 +47,7 @@ export default function App() {
         panel.scrollTo({ top: panel.scrollTop + bounds.top - panelBounds.top - inset, behavior: 'instant' });
       }
     } else {
-      // The mobile inspector is in document flow, so reveal it in that scroll context.
+      // モバイルでは詳細パネルが通常のページ内にあるため、ページ側をスクロールする。
       if (bounds.top < 16 || bounds.bottom > window.innerHeight - 16) {
         window.scrollTo({ top: window.scrollY + bounds.top - 16, behavior: 'instant' });
       }
@@ -62,7 +62,7 @@ export default function App() {
     return () => request.abort();
   }, [attempt]);
   useEffect(() => {
-    // Do not replace a shared mesh with the default while population is loading.
+    // 人口の読込中に共有URLのメッシュを既定値へ置き換えない。
     if (!data) return;
     const url = sharedViewUrl(window.location.href, { year, meshId: selectedId });
     if (url !== window.location.href) window.history.replaceState(window.history.state, '', url);

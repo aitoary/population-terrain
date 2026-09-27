@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validate pinned PTN data, select SHICODE 03202, and transform EPSG:6668 to 4326."""
+"""固定済みPTNデータを検証し、SHICODE 03202を抽出してEPSG:6668から4326へ変換する。"""
 
 from __future__ import annotations
 
@@ -25,7 +25,7 @@ from acquire_data import (
     write_json,
 )
 from pyproj import Transformer
-# pyproj 3.7's public network API is an unmarked Cython re-export.
+# pyproj 3.7の公開ネットワークAPIは、型情報上は公開扱いされていないCythonの再エクスポート。
 from pyproj.network import is_network_enabled, set_network_enabled  # pyright: ignore[reportPrivateImportUsage]
 
 LOGGER = logging.getLogger(__name__)
@@ -107,8 +107,8 @@ def prepare_features(source: dict, transformer: Transformer) -> tuple[list[dict]
         mesh = normalize_code(properties.get("MESH_ID"), 9, f"MESH_ID[{index}]")
         raw_city = properties.get("SHICODE")
         if isinstance(raw_city, str) and "_" in raw_city:
-            # Observed in the SAME pinned archive, outside Miyako. Preserve the raw
-            # assignment; do not reinterpret it as multiple new population features.
+            # 同じ固定済み原本の宮古市外で複合コードを確認済み。自治体の割当は原文のまま保持し、
+            # 複数の人口Featureへ分割して解釈しない。
             parts = [normalize_code(part, 5, f"SHICODE[{index}]") for part in raw_city.split("_")]
             checked(len(parts) == 2 and len(set(parts)) == 2, f"{mesh}: unexpected compound SHICODE")
             checked(CITY_CODE not in parts, f"{mesh}: ambiguous Miyako assignment requires review")
@@ -124,7 +124,7 @@ def prepare_features(source: dict, transformer: Transformer) -> tuple[list[dict]
             checked(field in properties, f"{mesh}: missing {field}; PT00 is not a substitute")
             populations[str(year)] = population_value(properties[field], f"{mesh}.{field}")
         ring = rectangle_ring(feature.get("geometry"), mesh)
-        # Validate the entire prefecture's required contract before selecting Miyako.
+        # 宮古市だけを抽出する前に、県全体で必須項目の整合性を確認する。
         if city != CITY_CODE:
             continue
         coordinates = [list(transformer.transform(point[0], point[1], errcheck=True)) for point in ring]
@@ -138,7 +138,7 @@ def prepare_features(source: dict, transformer: Transformer) -> tuple[list[dict]
             if populations[str(year)] is None:
                 null_values.append({"meshId": mesh, "year": year})
         for year in YEARS[1:]:
-            # Preserve the actual field spelling; these do not invalidate the public PTN total.
+            # 原典の項目名をそのまま検査する。これらの値は公開するPTN総人口を無効にしない。
             for field in (f"HITOKU{year}", f"GASSAN{year}"):
                 checked(field in properties, f"{mesh}: missing inspection field {field}")
             suppression[str(year)]["HITOKU"][str(properties[f"HITOKU{year}"])] += 1
@@ -234,8 +234,8 @@ def run() -> dict:
         ring = next(f for f in features if f["id"] == "594137654")["geometry"]["coordinates"][0]
         checked(min(p[0] for p in ring) <= station[0] <= max(p[0] for p in ring)
                 and min(p[1] for p in ring) <= station[1] <= max(p[1] for p in ring), "Station not inside mesh 594137654")
-        # The selected noop pipeline has no last-used-operation handle in PROJ 9.5.
-        # Its concrete definition and component operations are available on Transformer.
+        # PROJ 9.5のnoop変換では最後に使った操作を取得できない。
+        # 具体的な定義と構成操作はTransformerから確認する。
         operation = transformer
         crs_report = {"source": "EPSG:6668", "output": "EPSG:4326", "alwaysXY": True,
                       "pyprojVersion": pyproj.__version__, "projVersion": pyproj.proj_version_str,
@@ -258,7 +258,7 @@ def run() -> dict:
         outputs = {"miyako-population.geojson": {"type": "FeatureCollection", "features": features},
                    "miyako-border.geojson": border, "data-meta.json": metadata}
         encoded = {name: compact_json(value) for name, value in outputs.items()}
-        # No output is written until all source/geometry/numeric checks above have passed.
+        # 原典・形状・数値の検査がすべて通るまで公開ファイルを書き出さない。
         PUBLIC.mkdir(parents=True, exist_ok=True)
         for name, content in encoded.items():
             temporary = PUBLIC / f"{name}.tmp"

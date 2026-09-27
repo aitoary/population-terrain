@@ -111,6 +111,7 @@ export function parseMetadata(value: unknown): PopulationMetadata {
 
 export function validateDataset(collection: PopulationCollection, metadata: PopulationMetadata): PopulationDataset {
   check(collection.features.length === metadata.meshCount, 'メタデータと実際のメッシュ数が不一致です');
+  // 欠損値と実際の0人を別々に数え、加工済みGeoJSONとメタデータの食い違いを検出する。
   for (const year of YEARS) {
     let sum = 0;
     let missing = 0;

@@ -20,7 +20,7 @@ function cellPoints(feature: MeshFeature): SamplePoint[] {
     for (const longitude of [west, (west + east) / 2, east]) {
       points.push({
         key: `${longitude},${latitude}`,
-        // Cesium can leave a height untouched; its default zero is not a measured height.
+        // Cesiumが高さを更新しない場合があるため、初期値の0を測定結果と誤認しない。
         position: Cartographic.fromDegrees(longitude, latitude, Number.NaN),
       });
     }
@@ -44,7 +44,7 @@ export class TerrainSampler {
     const { signal } = this.lifecycle;
     signal.throwIfAborted();
     const requested = [...features];
-    // One queue per instance keeps overlapping callers within the same two-worker limit.
+    // 呼び出しが重なっても同一インスタンス内では直列化し、同時取得を2件以内に保つ。
     const work = this.queue.then(() => this.sampleQueuedCells(requested));
     this.queue = work.then(() => undefined, () => undefined);
 
@@ -105,7 +105,7 @@ export class TerrainSampler {
         const [tileKey, points] = next.value;
         try {
           const sampled = await this.sample(this.provider, TERRAIN_LEVEL, points.map((point) => point.position), true);
-          // sampleTerrain has no AbortSignal; never retain a late completion after destroy.
+          // sampleTerrainは中断できないため、破棄後に届いた結果はキャッシュへ入れない。
           signal.throwIfAborted();
           for (const [index, point] of points.entries()) {
             const height = sampled[index]?.height;
@@ -138,6 +138,7 @@ export class TerrainSampler {
         if (typeof height === 'number' && Number.isFinite(height)) heights.push(height);
         else failure ??= failures.get(key) ?? '地形の高さが取得できません';
       }
+      // 一部だけの高さから基準面を推測すると柱が地形に埋まるため、9点すべてを必須にする。
       if (heights.length !== 9) {
         results.set(meshId, { status: 'error', meshId, message: `${failure}（有効な高さ ${heights.length}/9点）` });
         continue;

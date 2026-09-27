@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Read-only offline verification of public outputs against pinned local originals."""
+"""公開ファイルを固定済みのローカル原本と照合する。ネットワークや出力は変更しない。"""
 
 import json
 import zipfile
@@ -14,7 +14,7 @@ from acquire_data import (
 )
 from prepare_population import prepare_border, prepare_features, summarize, verify_plan
 from pyproj import Transformer
-# pyproj 3.7's supported public API is an unmarked Cython re-export.
+# pyproj 3.7の公開APIは、型情報上は公開扱いされていないCythonの再エクスポート。
 from pyproj.network import set_network_enabled  # pyright: ignore[reportPrivateImportUsage]
 
 

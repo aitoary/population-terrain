@@ -46,6 +46,7 @@ export default function MapViewport({ data, year, selectedId, selectionFocusRequ
   });
   const select = useEffectEvent((id: string) => onSelect(id));
 
+  // Viewerの寿命は再初期化操作だけで決める。年や選択の変更では地図本体を作り直さない。
   useEffect(() => {
     const container = element.current;
     if (!container) return;
@@ -58,7 +59,7 @@ export default function MapViewport({ data, year, selectedId, selectionFocusRequ
     try {
       scene = createViewer(container, (message) => { if (active) setMapError(`背景地図の取得失敗: ${message}`); });
       sceneRef.current = scene;
-      // Credits wrap as the map narrows. Reserve their actual height for the overlay UI.
+      // 地図幅で折り返すクレジットの実寸を測り、重ねるUIの下余白に反映する。
       const credits = container.querySelector<HTMLElement>('.cesium-viewer-bottom');
       if (credits) {
         creditObserver = new ResizeObserver(() => {
@@ -82,12 +83,13 @@ export default function MapViewport({ data, year, selectedId, selectionFocusRequ
       connections?.terrain.destroy(); connections?.buildings.destroy();
       removeRenderError?.(); scene?.destroy();
       creditObserver?.disconnect();
-      // A throwing Cesium constructor can leave DOM without returning a Viewer to destroy.
+      // Cesiumの初期化途中で例外が出ると、破棄可能なViewerなしでDOMだけ残る場合がある。
       container.replaceChildren();
       if (__ACCEPTANCE__ && '__mvpViewer' in window) delete (window as Window & { __mvpViewer?: unknown }).__mvpViewer;
     };
   }, [mapAttempt]);
 
+  // 市境の再試行は独立させ、人口やViewerの状態を巻き込まない。
   useEffect(() => {
     const viewer = sceneRef.current?.viewer;
     if (!viewer || !ready) return;
@@ -121,6 +123,7 @@ export default function MapViewport({ data, year, selectedId, selectionFocusRequ
     return () => { request.abort(); removeVisibility?.(); borderRef.current = null; if (source && !viewer.isDestroyed()) viewer.dataSources.remove(source, true); };
   }, [ready, borderAttempt, mapAttempt]);
 
+  // 人口レイヤーはViewerの再初期化、地形提供元・データの変更、明示的な再試行時に作り直す。
   useEffect(() => {
     const viewer = sceneRef.current?.viewer;
     if (!viewer || !provider || !data || !ready) return;
@@ -146,7 +149,7 @@ export default function MapViewport({ data, year, selectedId, selectionFocusRequ
         removeSelection = connectSelection(viewer, layer.source, select);
         const failed = layer.rows.filter((row) => row.terrain?.status !== 'ready').length;
         setPopulation(failed ? { status: 'error', message: `高さ取得失敗 ${failed}/${data.metadata.meshCount}セル。数値は引き続き参照できます。` } : { status: 'ready', message: `${data.metadata.meshCount}セルを表示` });
-        // Compiled out of ordinary builds; local acceptance never substitutes data.
+        // 通常ビルドでは除外する。受け入れテストでも実データは差し替えない。
         if (__ACCEPTANCE__ && new URLSearchParams(location.search).get('acceptance') === '1') {
           Object.assign(window, { __mvp: { viewer, layer, bases } });
         }
@@ -160,6 +163,7 @@ export default function MapViewport({ data, year, selectedId, selectionFocusRequ
     };
   }, [provider, data, ready, heightAttempt, mapAttempt]);
 
+  // 日常の操作は既存レイヤーの属性だけを更新する。
   useEffect(() => { applyCurrent(); }, [year, selectedId, opacity, layers]);
 
   useEffect(() => {
@@ -170,8 +174,7 @@ export default function MapViewport({ data, year, selectedId, selectionFocusRequ
     if (!row && terrain.status !== 'error' && population.status !== 'error') return;
     if (row?.terrain?.status === 'ready') focusMesh(viewer, feature, row.terrain.baseHeight);
     else {
-      // With no measured terrain, frame the surrounding area from well above
-      // the mountains instead of placing the camera near ellipsoid height zero.
+      // 地形高を取得できない場合、楕円体高0付近からではなく、周辺を十分高い視点から映す。
       const [west, south, east, north] = meshBbox(feature);
       focusAll(viewer, [west - 0.02, south - 0.02, east + 0.02, north + 0.02]);
     }

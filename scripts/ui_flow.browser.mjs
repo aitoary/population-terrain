@@ -20,7 +20,7 @@ async function ready(page, year = 2050) {
 }
 
 async function expectView(page, year, id = station) {
-  // Read one coherent frame: separate browser round trips can span a 900ms playback tick.
+  // 個別のブラウザー呼び出しは900msの再生間隔をまたぐため、同じ描画時点の状態をまとめて読む。
   await expect.poll(() => page.evaluate(() => {
     const details = document.querySelector('[data-testid="mesh-details"]');
     const chart = document.querySelector('[data-testid="population-trend"]');
@@ -107,7 +107,7 @@ for (const [width, height] of [[1366, 768], [1024, 768], [390, 844], [320, 740]]
       await expect(page.locator('.mesh-summary .share-link button')).toBeInViewport();
       await expect(page.locator('.featured-locations')).toBeInViewport();
     } else {
-      // The map and year control are usable before scrolling down to the compact inspector.
+      // 簡略化された詳細欄へスクロールする前に、地図と年操作が使えることを確認する。
       expect(initial.map.bottom).toBeLessThanOrEqual(height);
       expect(await panel(page).evaluate((element) => element.clientHeight)).toBeLessThan(500);
     }
@@ -124,7 +124,7 @@ for (const [width, height] of [[1366, 768], [1024, 768], [390, 844], [320, 740]]
       const scrolled = await layout(page);
       expect(scrolled.legend.bottom).toBe(initial.legend.bottom);
       expect(scrolled.legend.left).toBe(initial.legend.left);
-      // The hidden state adds a line but keeps the lower edge fixed.
+      // 非表示時は説明が1行増えるが、凡例の下端は動かない。
     }
     await page.getByRole('checkbox', { name: '人口', exact: true }).check();
     await expect(legend(page).locator('[role="status"]')).toBeEmpty();
@@ -165,7 +165,7 @@ for (const [width, height] of [[1366, 768], [1024, 768], [390, 844], [320, 740]]
     await expect(page.locator('.mesh-more')).toHaveAttribute('open', '');
     await page.locator('.mesh-more > summary').focus();
     const scroll = await layout(page);
-    // Use an explicit click without Playwright scrolling to the header, to isolate app scrolling.
+    // アプリ自身のスクロールだけを見るため、Playwrightの自動スクロールを伴わないクリックを使う。
     await play(page).evaluate((button) => button.click());
     await expectView(page, 2020, '594132791');
     await expect(page.locator('#population-year')).toHaveValue('2025');
@@ -188,7 +188,7 @@ for (const [width, height] of [[1366, 768], [1024, 768], [390, 844], [320, 740]]
 test('restarts explicitly, uses one timer, preserves scroll, and copies/restores the linked chart', async ({ page, context }, testInfo) => {
   await page.addInitScript(() => {
     history.replaceState({ retained: 'ui-flow' }, '');
-    // Observe the real playback timers; do not replace the browser clock or map timers.
+    // 再生の実際のタイマーを観測し、ブラウザーや地図の時刻は置き換えない。
     const schedule = window.setTimeout;
     const cancel = window.clearTimeout;
     const active = new Set();
@@ -244,7 +244,7 @@ test('restarts explicitly, uses one timer, preserves scroll, and copies/restores
   await expect(page.locator('#population-opacity')).toHaveValue('0.6');
   await expect(page.getByRole('checkbox', { name: '市境', exact: true })).not.toBeChecked();
 
-  // The ref guard must also handle multiple clicks before React commits a render.
+  // Reactの描画確定前に連打されても、refによる多重起動防止が働くことを確認する。
   await play(page).evaluate((button) => { button.click(); button.click(); button.click(); button.click(); });
   await expectView(page, 2020);
   await expect(play(page)).toHaveAttribute('aria-pressed', 'false');
@@ -265,7 +265,7 @@ test('restarts explicitly, uses one timer, preserves scroll, and copies/restores
   await expect(play(page)).toHaveAttribute('aria-pressed', 'false');
   await page.waitForTimeout(1100);
   await expectView(page, 2070, featured);
-  // Re-selecting the same featured mesh still reveals its details.
+  // 同じ注目メッシュを再選択しても、詳細が見える位置へ移ることを確認する。
   await choice(page).click();
   await expect(page.locator('#mesh-heading')).toBeFocused();
   await expect(page.locator('.mesh-summary .share-link button')).toBeInViewport();

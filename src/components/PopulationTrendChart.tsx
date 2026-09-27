@@ -14,7 +14,7 @@ export function PopulationTrendChart({ population, year }: {
   population: MeshProperties['population']; year: Year;
 }) {
   const id = useId();
-  // Use the whole series so changing the current year never changes the scale.
+  // 表示年を動かしても縦軸が揺れないよう、全期間の値で目盛りを決める。
   const maximum = Math.max(0, ...YEARS.map((value) => population[value] ?? 0));
   const magnitude = 10 ** Math.floor(Math.log10(maximum || 1));
   const ceiling = ([1, 2, 5, 10].find((step) => step * magnitude >= maximum) ?? 10) * magnitude;

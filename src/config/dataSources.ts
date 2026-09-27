@@ -1,4 +1,4 @@
-// Checked against the saved official 2025 catalog; never use a latest/composite URL.
+// 表示する建物データを再現可能にするため、最新版や統合URLではなく固定年度の公式アセットを使う。
 export const DATA_SOURCES = {
   buildings: {
     year: 2025,
@@ -32,5 +32,5 @@ export const DATA_SOURCES = {
   },
 } as const;
 
-// Confirmed from the related ZIP's station GeoJSON, not a geocoding guess.
+// 宮古駅の座標は関連ZIP内の駅GeoJSONで確認済み。ジオコーディングによる推定値ではない。
 export const MIYAKO_STATION = { longitude: 141.94674615, latitude: 39.640204425 } as const;

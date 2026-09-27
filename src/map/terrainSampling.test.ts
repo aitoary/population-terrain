@@ -174,7 +174,7 @@ describe('TerrainSampler (real Miyako rectangles, injected sampleTerrain)', () =
   });
 
   it.each(['one batch', 'successive calls'] as const)('deduplicates shared edge points in %s, independently of mesh codes', async (mode) => {
-    // The three source rectangles are disjoint; derive a northern neighbor without mutating any source geometry.
+    // 原典の3矩形は離れているため、元の形状を変えず北隣の矩形を作る。
     const [west, south, east, north] = meshBbox(first);
     const top = north + (north - south);
     const neighbor: MeshFeature = {
@@ -268,7 +268,7 @@ describe('TerrainSampler (real Miyako rectangles, injected sampleTerrain)', () =
       initialHeights.push(...positions.map((position) => position.height));
       for (const position of positions) {
         if (failing && pointKey(position) === missingKey) {
-          // Cesium's runtime failure value can be undefined despite Cartographic.height's number type.
+          // Cartographic.heightの型はnumberでも、Cesiumは失敗時にundefinedを返し得る。
           if (value !== 'untouched') Object.assign(position, { height: value });
         } else position.height = failing ? 50 : 80;
       }
@@ -370,7 +370,7 @@ describe('TerrainSampler (real Miyako rectangles, injected sampleTerrain)', () =
     await vi.waitFor(() => expect(controlled.requests).toHaveLength(2));
     sampler.destroy();
     sampler.destroy();
-    // These promises must reject even while Cesium's non-cancellable tile requests are still pending.
+    // 中断できないCesiumのタイル要求が残っていても、呼び出し側のPromiseは棄却する。
     await Promise.all([activeAborted, queuedAborted]);
     expect(controlled.active).toBe(2);
 
